@@ -14,4 +14,5 @@
     * [soft-lockup](docs/问题分类/soft-lockup.md)
     * [hard-locakup](docs/问题分类/hard-locakup.md)
 * [案例](docs/案例.md)
+* [自动化分析工具](docs/自动化分析工具.md)
 
