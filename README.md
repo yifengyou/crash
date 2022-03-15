@@ -13,7 +13,9 @@ linux kernel coredump analysis
 
 
 
+## 图示
 
+![20220315_140057_50](image/20220315_140057_50.png) 
 
 
 

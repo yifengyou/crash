@@ -37,6 +37,77 @@ binary and ancillary utilities that together form the userspace
 component of the kernel's kexec feature.
 ```
 
+
+## kexec-tools包内容
+
+```
+[root@centos7-crash ~/rpmbuild/RPMS/x86_64/kexec-tools]# tree
+.
+├── etc
+│   ├── kdump.conf
+│   ├── makedumpfile.conf.sample
+│   └── sysconfig
+│       └── kdump
+├── sbin
+│   ├── kexec
+│   ├── makedumpfile
+│   ├── mkdumprd
+│   └── vmcore-dmesg
+├── usr
+│   ├── bin
+│   │   └── kdumpctl
+│   ├── lib
+│   │   ├── dracut
+│   │   │   └── modules.d
+│   │   │       └── 99kdumpbase
+│   │   │           ├── kdump-capture.service
+│   │   │           ├── kdump-emergency.service
+│   │   │           ├── kdump-emergency.target
+│   │   │           ├── kdump-error-handler.service
+│   │   │           ├── kdump-error-handler.sh
+│   │   │           ├── kdump.sh
+│   │   │           ├── module-setup.sh
+│   │   │           └── monitor_dd_progress
+│   │   ├── kdump
+│   │   │   ├── kdump-lib-initramfs.sh
+│   │   │   └── kdump-lib.sh
+│   │   ├── systemd
+│   │   │   ├── system
+│   │   │   │   └── kdump.service
+│   │   │   └── system-generators
+│   │   │       └── kdump-dep-generator.sh
+│   │   └── udev
+│   │       ├── kdump-udev-throttler
+│   │       └── rules.d
+│   │           └── 98-kexec.rules
+│   └── share
+│       ├── doc
+│       │   └── kexec-tools-2.0.15
+│       │       ├── COPYING
+│       │       ├── fadump-howto.txt
+│       │       ├── kdump-in-cluster-environment.txt
+│       │       ├── kexec-kdump-howto.txt
+│       │       ├── News
+│       │       ├── supported-kdump-targets.txt
+│       │       └── TODO
+│       ├── kdump
+│       └── man
+│           ├── man5
+│           │   ├── kdump.conf.5.gz
+│           │   └── makedumpfile.conf.5.gz
+│           └── man8
+│               ├── kdumpctl.8.gz
+│               ├── kexec.8.gz
+│               ├── makedumpfile.8.gz
+│               ├── mkdumprd.8.gz
+│               └── vmcore-dmesg.8.gz
+└── var
+    └── crash
+
+24 directories, 36 files
+```
+
+
 ## kdump/kexec原理
 
 
