@@ -84,6 +84,10 @@
     * [soft-lockup](docs/问题分类/soft-lockup.md)
     * [hard-locakup](docs/问题分类/hard-locakup.md)
 * [案例](docs/案例.md)
+    * [手动触发panic](docs/案例/手动触发panic.md)
+    * [内核模块触发空指针异常](docs/案例/内核模块触发空指针异常.md)
+    * [内核链表踩踏-前序节点](docs/案例/内核链表踩踏-前序节点.md)
+    * [内核链表踩踏-后继节点](docs/案例/内核链表踩踏-后继节点.md)
 
 
 ## 图示
