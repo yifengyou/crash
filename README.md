@@ -6,6 +6,7 @@
 * GitHub仓库：<https://github.com/crash-utility/crash/releases>
 * Fedora koji 构建：<https://koji.fedoraproject.org/koji/packageinfo?packageID=307>
 * 帮助信息：<https://crash-utility.github.io/help.html>
+* anolis bug追踪平台： <https://bugs.openanolis.cn/view_all_bug_page.php>
 
 ## 目录
 
@@ -25,6 +26,7 @@
     * [kexec用户态程序](docs/源码分析/kexec用户态程序.md)
     * [kdump服务](docs/源码分析/kdump服务.md)
 * [crash软件包rpm编译](docs/crash软件包rpm编译.md)
+* [crash字段解读](docs/crash字段解读.md)
 * [crash命令](docs/crash命令.md)
     * [指针(*)](docs/crash命令/指针.md)
     * [extend](docs/crash命令/extend.md)

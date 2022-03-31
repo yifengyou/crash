@@ -17,6 +17,7 @@
     * [kexec用户态程序](docs/源码分析/kexec用户态程序.md)
     * [kdump服务](docs/源码分析/kdump服务.md)
 * [crash软件包rpm编译](docs/crash软件包rpm编译.md)
+* [crash潜规则](docs/crash潜规则.md)
 * [crash命令](docs/crash命令.md)
     * [指针(*)](docs/crash命令/指针.md)
     * [extend](docs/crash命令/extend.md)
@@ -74,4 +75,5 @@
     * [soft-lockup](docs/问题分类/soft-lockup.md)
     * [hard-locakup](docs/问题分类/hard-locakup.md)
 * [案例](docs/案例.md)
-
+    * [手动触发panic](docs/案例/手动触发panic.md)
+    * [内核模块触发空指针异常](docs/案例/内核模块触发空指针异常.md)
