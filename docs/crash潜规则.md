@@ -1,5 +1,18 @@
 # crash潜规则
 
+## Oops字段含义
+
+
+```
+Oops: 0002 [#1] SMP
+This is the error code value in hex. Each bit has a significance of its own:
+
+bit 0 == 0 means no page found, 1 means a protection fault
+bit 1 == 0 means read, 1 means write
+bit 2 == 0 means kernel, 1 means user-mode
+[#1] — this value is the number of times the Oops occurred. Multiple Oops can be triggered as a cascading effect of the first one.
+```
+
 ## loaded Tainted含义
 
 
@@ -26,7 +39,9 @@ W — Taint on warning.
 
 
 
+## 参考
 
+* <https://www.opensourceforu.com/2011/01/understanding-a-kernel-oops/>
 
 
 
