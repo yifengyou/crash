@@ -13,6 +13,7 @@
 * [基础知识](docs/基础知识.md)
     * [kdump](docs/基础知识/kdump.md)
     * [crash](docs/基础知识/crash.md)
+    * [X86堆栈](docs/基础知识/X86堆栈.md)
 * [分析工具](docs/分析工具.md)
     * [crash](docs/分析工具/crash.md)
     * [crash-python](docs/分析工具/crash-python.md)
