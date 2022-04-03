@@ -1,3 +1,13 @@
+<!-- MDTOC maxdepth:6 firsth1:1 numbering:0 flatten:0 bullets:1 updateOnSave:1 -->
+
+- [kdump](#kdump)   
+   - [安装kexec-tools](#安装kexec-tools)   
+   - [kexec-tools包内容](#kexec-tools包内容)   
+   - [kdump/kexec原理](#kdumpkexec原理)   
+   - [OpenEuler社区kdump分享](#openeuler社区kdump分享)   
+   - [kdump为何要做成服务？](#kdump为何要做成服务？)   
+
+<!-- /MDTOC -->
 # kdump
 
 ## 安装kexec-tools
@@ -126,16 +136,58 @@ component of the kernel's kexec feature.
 
 
 
+## OpenEuler社区kdump分享
+
+* <https://www.bilibili.com/video/BV1M64y1Q7yp/?spm_id_from=333.788.recommend_more_video.0>
+
+![20220403_182620_41](image/20220403_182620_41.png)
+
+![20220403_182636_86](image/20220403_182636_86.png)
+
+![20220403_182602_86](image/20220403_182602_86.png)
+
+![20220403_182551_28](image/20220403_182551_28.png)
+
+![20220403_182534_38](image/20220403_182534_38.png)
+
+系统调用kexec_load
+
+![20220403_203908_47](image/20220403_203908_47.png)
+
+flag标记不同，当前状态不同，执行逻辑不同。crash与手动触发快速进入第二内核
+
+![20220403_204237_76](image/20220403_204237_76.png)
+
+kexec与kdump，kdump依赖于kexec；kexec提供最基本的核心功能
+
+![20220403_204356_22](image/20220403_204356_22.png)
+
+![20220403_205319_66](image/20220403_205319_66.png)
 
 
+预留内存查看
 
+![20220403_205758_29](image/20220403_205758_29.png)
 
+预留内存大小评估
 
+1. 捕获内核启动CPU个数
+2. Kernel、initrd、device
+3. 通常256MB 或 512MB 足矣
 
+![20220403_205854_32](image/20220403_205854_32.png)
 
+![20220403_210353_18](image/20220403_210353_18.png)
 
+crash/oops触发时执行
 
+![20220403_210705_48](image/20220403_210705_48.png)
 
+![20220403_211140_76](image/20220403_211140_76.png)
+
+使用makedumpfile做页面过滤、压缩，缩减体积
+
+![20220403_211300_64](image/20220403_211300_64.png)
 
 
 
