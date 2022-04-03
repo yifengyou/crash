@@ -5,7 +5,6 @@
    - [kexec-tools包内容](#kexec-tools包内容)   
    - [kdump/kexec原理](#kdumpkexec原理)   
    - [OpenEuler社区kdump分享](#openeuler社区kdump分享)   
-   - [kdump为何要做成服务？](#kdump为何要做成服务？)   
 
 <!-- /MDTOC -->
 # kdump
@@ -126,16 +125,6 @@ component of the kernel's kexec feature.
 
 
 
-
-
-
-
-
-
-
-
-
-
 ## OpenEuler社区kdump分享
 
 * <https://www.bilibili.com/video/BV1M64y1Q7yp/?spm_id_from=333.788.recommend_more_video.0>
@@ -225,32 +214,13 @@ ARM64预留内存策略
 ![20220403_213602_82](image/20220403_213602_82.png)
 
 
+![20220403_214032_81](image/20220403_214032_81.png)
 
+![20220403_214227_28](image/20220403_214227_28.png)
 
+![20220403_214355_64](image/20220403_214355_64.png)
 
-
-
-
-
-
-## kdump为何要做成服务？
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+![20220403_215601_74](image/20220403_215601_74.png)
 
 
 ---
