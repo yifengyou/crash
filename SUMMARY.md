@@ -6,6 +6,7 @@
     * [crash](docs/基础知识/crash.md)
     * [crashkernel启动参数](docs/基础知识/crashkernel启动参数.md)
     * [X86堆栈](docs/基础知识/X86堆栈.md)
+    * [/proc/sysrq-trigger功能](docs/基础知识/sysrq-trigger功能.md)
 * [分析工具](docs/分析工具.md)
     * [crash](docs/分析工具/crash.md)
     * [crash-python](docs/分析工具/crash-python.md)
