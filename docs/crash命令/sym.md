@@ -1,4 +1,16 @@
+<!-- MDTOC maxdepth:6 firsth1:1 numbering:0 flatten:0 bullets:1 updateOnSave:1 -->
+
+- [sym](#sym)   
+   - [帮助手册](#帮助手册)   
+   - [常见用法](#常见用法)   
+      - [列出所有符号](#列出所有符号)   
+
+<!-- /MDTOC -->
+
 # sym
+
+
+## 帮助手册
 
 ```
 NAME
@@ -153,6 +165,56 @@ EXAMPLES
     f88878d1 (t) ext3_readdir [ext3]
     crash>
 ```
+
+## 常见用法
+
+### 列出所有符号
+
+```
+sym -l
+```
+
+![20220404_174226_98](image/20220404_174226_98.png)
+
+crash下可以直接重定向导出
+
+![20220404_174354_86](image/20220404_174354_86.png)
+
+```
+129646 log.sym
+```
+
+左侧是地址，中间是类型，右测是符号名
+
+```
+(A)
+(b)
+(B)
+(d)
+(D)
+MODULE END
+MODULE START
+(r)
+(R)
+(t)
+(T)
+(V)
+(w)
+(W)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
