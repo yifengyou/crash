@@ -13,7 +13,12 @@
 * [基础知识](docs/基础知识.md)
     * [kdump](docs/基础知识/kdump.md)
     * [crash](docs/基础知识/crash.md)
+    * [crashkernel启动参数](docs/基础知识/crashkernel启动参数.md)
     * [X86堆栈](docs/基础知识/X86堆栈.md)
+    * [/proc/sysrq-trigger功能](docs/基础知识/sysrq-trigger功能.md)
+    * [no-omit-frame-pointer编译标识](docs/基础知识/no-omit-frame-pointer.md)
+    * [ELF符号](docs/基础知识/ELF符号.md)
+    * [内核ELF中的percpu变量](docs/基础知识/内核ELF中的percpu变量.md)
 * [分析工具](docs/分析工具.md)
     * [crash](docs/分析工具/crash.md)
     * [crash-python](docs/分析工具/crash-python.md)
@@ -27,7 +32,7 @@
     * [kexec用户态程序](docs/源码分析/kexec用户态程序.md)
     * [kdump服务](docs/源码分析/kdump服务.md)
 * [crash软件包rpm编译](docs/crash软件包rpm编译.md)
-* [crash字段解读](docs/crash字段解读.md)
+* [crash潜规则](docs/crash潜规则.md)
 * [crash命令](docs/crash命令.md)
     * [指针(*)](docs/crash命令/指针.md)
     * [extend](docs/crash命令/extend.md)
@@ -93,6 +98,7 @@
     * [softlockup-等待状态寄存器](docs/案例/softlockup-等待状态寄存器.md)
 * [Kernel Pwn](docs/kernel_pwn.md)
     * [babydriver](docs/kernel_pwn/babydriver.md)
+
 
 
 ## 图示

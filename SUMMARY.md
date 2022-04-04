@@ -8,6 +8,8 @@
     * [X86堆栈](docs/基础知识/X86堆栈.md)
     * [/proc/sysrq-trigger功能](docs/基础知识/sysrq-trigger功能.md)
     * [no-omit-frame-pointer编译标识](docs/基础知识/no-omit-frame-pointer.md)
+    * [ELF符号](docs/基础知识/ELF符号.md)
+    * [内核ELF中的percpu变量](docs/基础知识/内核ELF中的percpu变量.md)
 * [分析工具](docs/分析工具.md)
     * [crash](docs/分析工具/crash.md)
     * [crash-python](docs/分析工具/crash-python.md)
@@ -87,4 +89,3 @@
     * [softlockup-等待状态寄存器](docs/案例/softlockup-等待状态寄存器.md)
 * [Kernel Pwn](docs/kernel_pwn.md)
     * [babydriver](docs/kernel_pwn/babydriver.md)
-
