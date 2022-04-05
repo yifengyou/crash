@@ -65,7 +65,9 @@ The symbol is a weak symbol that has not been specifically tagged as a weak obje
 
 
 
+## 参考
 
+* <https://www.intezer.com/blog/malware-analysis/executable-linkable-format-101-part-2-symbols/>
 
 
 

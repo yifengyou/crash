@@ -46,6 +46,10 @@ binary and ancillary utilities that together form the userspace
 component of the kernel's kexec feature.
 ```
 
+Ubuntu下对应的包为  ```linux-crashdump```
+
+
+
 
 ## kexec-tools包内容
 
@@ -222,5 +226,9 @@ ARM64预留内存策略
 
 ![20220403_215601_74](image/20220403_215601_74.png)
 
+
+## 参考
+
+* <https://pwl999.blog.csdn.net/article/details/118418242>
 
 ---

@@ -231,12 +231,37 @@ EXAMPLES
 
 
 
+## dis常用方式
+
+### 获取源吗
+
+```
+dis -s printk
+```
+
+![20220405_115354_99](image/20220405_115354_99.png)
 
 
+```
+da4a220
+
+Fix for the "dis -s" option when running against kernels that have
+been configured with CONFIG_RANDOMIZE_BASE=y (KASLR). Without the
+patch, the command option indicates that the FILE and LINE numbers
+are "(unknown)", and that "source code is not available".
+(anderson@redhat.com)
+```
+
+若```CONFIG_RANDOMIZE_BASE=y```打开，则无法获取源码
+
+https://github.com/crash-utility/crash/issues/47
 
 
+### 获取函数汇编
 
-
+```
+dis -l printk
+```
 
 
 
