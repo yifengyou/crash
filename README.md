@@ -84,6 +84,8 @@
     * [ptov](docs/crash命令/ptov.md)
     * [sys](docs/crash命令/sys.md)
     * [q](docs/crash命令/q.md)
+* [crash基本用法](docs/crash基本用法.md)
+  * [获取进程vm_area_struct链表](docs/crash基本用法/获取进程vm_area_struct链表.md)
 * [问题分类](docs/问题分类.md)
     * [Oops](docs/问题分类/Oops.md)
     * [panic](docs/问题分类/panic.md)
