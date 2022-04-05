@@ -77,6 +77,7 @@
     * [sys](docs/crash命令/sys.md)
     * [q](docs/crash命令/q.md)
 * [crash基本用法](docs/crash基本用法.md)
+  * [获取percpu变量](docs/crash基本用法/获取percpu变量.md)
   * [获取所有task元数据](docs/crash基本用法/获取所有task元数据.md)
   * [获取当前系统支持的文件系统](docs/crash基本用法/获取当前系统支持的文件系统.md)
   * [获取进程vm_area_struct链表](docs/crash基本用法/获取进程vm_area_struct链表.md)
