@@ -77,6 +77,7 @@
     * [sys](docs/crash命令/sys.md)
     * [q](docs/crash命令/q.md)
 * [crash基本用法](docs/crash基本用法.md)
+    * [x86_64虚拟地址空间布局](docs/crash基本用法/x86_64虚拟地址空间布局.md)
     * [获取pfn获取pfn、page和mem_map](docs/crash基本用法/获取pfn_page_mem_map.md)
     * [获取进程CR3寄存器值](docs/crash基本用法/获取进程CR3寄存器值.md)
     * [获取percpu变量](docs/crash基本用法/获取percpu变量.md)
@@ -97,3 +98,4 @@
     * [softlockup-等待状态寄存器](docs/案例/softlockup-等待状态寄存器.md)
 * [Kernel Pwn](docs/kernel_pwn.md)
     * [babydriver](docs/kernel_pwn/babydriver.md)
+
