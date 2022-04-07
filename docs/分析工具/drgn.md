@@ -89,6 +89,9 @@ yum install drgn -y
 ## 参考
 
 * <https://drgn.readthedocs.io/en/latest/user_guide.html>
+* <https://lwn.net/Articles/789641/>
+* <https://lwn.net/Articles/lsfmm2019/>
+* <https://developers.facebook.com/blog/post/2021/12/09/drgn-how-linux-kernel-team-meta-debugs-kernel-scale/>
 
 
 
