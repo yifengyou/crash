@@ -1,0 +1,156 @@
+From b584eb81ff27e42547d01c521b488aaeaa35b460 Mon Sep 17 00:00:00 2001
+From: Lianbo Jiang <lijiang@redhat.com>
+Date: Thu, 28 Jul 2022 15:11:20 +0800
+Subject: [PATCH 14/28] x86_64: Fix for AMD SME issue
+
+Kernel commit changes(see [1]/[2]) may cause the failure of crash-utility
+with the following error:
+
+  #./crash /home/vmlinux /home/vmcore
+  ...
+  For help, type "help".
+  Type "apropos word" to search for commands related to "word"...
+
+  crash: seek error: physical address: 8000760a14000  type: "p4d page"
+
+Let's get the "NUMBER(sme_mask)" from vmcoreinfo, and try to remove
+the C-bit from the page table entries, the intention is to get the
+true physical address.
+
+Related kernel commits:
+[1] aad983913d77 ("x86/mm/encrypt: Simplify sme_populate_pgd() and sme_populate_pgd_large()")
+[2] e7d445ab26db ("x86/sme: Use #define USE_EARLY_PGTABLE_L5 in mem_encrypt_identity.c")
+
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ defs.h   |  1 +
+ x86_64.c | 21 ++++++++++++++++++---
+ 2 files changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/defs.h b/defs.h
+index 6a1b6f8a16a8..f8fbfdfd1152 100644
+--- a/defs.h
++++ b/defs.h
+@@ -6206,6 +6206,7 @@ struct machine_specific {
+ 	ulong cpu_entry_area_end;
+ 	ulong page_offset_force;
+ 	char **exception_functions;
++	ulong sme_mask;
+ };
+ 
+ #define KSYMS_START    (0x1)
+diff --git a/x86_64.c b/x86_64.c
+index f4e5d9e77cef..b2a536e4b19c 100644
+--- a/x86_64.c
++++ b/x86_64.c
+@@ -206,6 +206,10 @@ x86_64_init(int when)
+ 			machdep->machspec->kernel_image_size = dtol(string, QUIET, NULL);
+ 			free(string);
+ 		}
++		if ((string = pc->read_vmcoreinfo("NUMBER(sme_mask)"))) {
++			machdep->machspec->sme_mask = dtol(string, QUIET, NULL);
++			free(string);
++		}
+ 		if (SADUMP_DUMPFILE() || QEMU_MEM_DUMP_NO_VMCOREINFO() ||
+ 		    VMSS_DUMPFILE())
+ 			/* Need for calculation of kaslr_offset and phys_base */
+@@ -937,6 +941,7 @@ x86_64_dump_machdep_table(ulong arg)
+ 			ms->kernel_image_size/MEGABYTES(1));
+ 	else
+ 		fprintf(fp, "(uninitialized)\n");
++	fprintf(fp, "                 sme_mask: %lx\n", ms->sme_mask);
+ 	fprintf(fp, "      physical_mask_shift: %ld\n", ms->physical_mask_shift);
+ 	fprintf(fp, "              pgdir_shift: %ld\n", ms->pgdir_shift);
+ 	fprintf(fp, "               GART_start: %lx\n", ms->GART_start);
+@@ -1814,7 +1819,7 @@ x86_64_kpgd_offset(ulong kvaddr, int verbose, int IS_XEN)
+ 		if (IS_XEN)
+ 			fprintf(fp, "PAGE DIRECTORY: %lx [machine]\n", *pgd);
+ 		else
+-			fprintf(fp, "PAGE DIRECTORY: %lx\n", *pgd);
++			fprintf(fp, "PAGE DIRECTORY: %lx\n", *pgd & ~machdep->machspec->sme_mask);
+ 	}
+ 
+ 	return pgd;
+@@ -1851,7 +1856,8 @@ x86_64_upgd_offset_legacy(struct task_context *tc, ulong uvaddr, int verbose, in
+ 		if (IS_XEN)
+ 			fprintf(fp, "   PGD: %lx => %lx [machine]\n", (ulong)pud, pud_pte);
+ 		else
+-			fprintf(fp, "   PGD: %lx => %lx\n", (ulong)pud, pud_pte);
++			fprintf(fp, "   PGD: %lx => %lx\n",
++				(ulong)pud, pud_pte & ~machdep->machspec->sme_mask);
+         }
+ 
+ 	return pud_pte;
+@@ -1882,7 +1888,8 @@ x86_64_upgd_offset(struct task_context *tc, ulong uvaddr, int verbose, int IS_XE
+ 		if (IS_XEN)
+ 			fprintf(fp, "   PGD: %lx => %lx [machine]\n", (ulong)pgd, pgd_pte);
+ 		else
+-			fprintf(fp, "   PGD: %lx => %lx\n", (ulong)pgd, pgd_pte);
++			fprintf(fp, "   PGD: %lx => %lx\n",
++				(ulong)pgd, pgd_pte & ~machdep->machspec->sme_mask);
+         }
+ 
+ 	return pgd_pte;
+@@ -1900,9 +1907,11 @@ x86_64_p4d_offset(ulong pgd_pte, ulong vaddr, int verbose, int IS_XEN)
+ 	ulong p4d_pte;
+ 
+ 	p4d_paddr = pgd_pte & PHYSICAL_PAGE_MASK;
++	p4d_paddr &= ~machdep->machspec->sme_mask;
+ 	FILL_P4D(p4d_paddr, PHYSADDR, PAGESIZE());
+ 	p4d = ((ulong *)p4d_paddr) + p4d_index(vaddr);
+ 	p4d_pte = ULONG(machdep->machspec->p4d + PAGEOFFSET(p4d));
++	p4d_pte &= ~machdep->machspec->sme_mask;
+         if (verbose) {
+ 		if (IS_XEN)
+ 			fprintf(fp, "   P4D: %lx => %lx [machine]\n", (ulong)p4d, p4d_pte);
+@@ -1925,6 +1934,7 @@ x86_64_pud_offset(ulong pgd_pte, ulong vaddr, int verbose, int IS_XEN)
+ 	ulong pud_pte;
+ 
+ 	pud_paddr = pgd_pte & PHYSICAL_PAGE_MASK;
++	pud_paddr &= ~machdep->machspec->sme_mask;
+ 
+ 	if (IS_XEN) {
+ 		pud_paddr = xen_m2p(pud_paddr);
+@@ -1935,6 +1945,7 @@ x86_64_pud_offset(ulong pgd_pte, ulong vaddr, int verbose, int IS_XEN)
+ 	FILL_PUD(pud_paddr, PHYSADDR, PAGESIZE());
+ 	pud = ((ulong *)pud_paddr) + pud_index(vaddr);
+ 	pud_pte = ULONG(machdep->pud + PAGEOFFSET(pud));
++	pud_pte &= ~machdep->machspec->sme_mask;
+ 	if (verbose) {
+ 		if (IS_XEN)
+ 			fprintf(fp, "   PUD: %lx => %lx [machine]\n", (ulong)pud, pud_pte);
+@@ -1957,6 +1968,7 @@ x86_64_pmd_offset(ulong pud_pte, ulong vaddr, int verbose, int IS_XEN)
+ 	ulong pmd_pte;
+ 
+ 	pmd_paddr = pud_pte & PHYSICAL_PAGE_MASK;
++	pmd_paddr &= ~machdep->machspec->sme_mask;
+ 
+ 	if (IS_XEN) {
+ 		pmd_paddr = xen_m2p(pmd_paddr);
+@@ -1967,6 +1979,7 @@ x86_64_pmd_offset(ulong pud_pte, ulong vaddr, int verbose, int IS_XEN)
+ 	FILL_PMD(pmd_paddr, PHYSADDR, PAGESIZE());
+ 	pmd = ((ulong *)pmd_paddr) + pmd_index(vaddr);
+ 	pmd_pte = ULONG(machdep->pmd + PAGEOFFSET(pmd));
++	pmd_pte &= ~machdep->machspec->sme_mask;
+         if (verbose) {
+ 		if (IS_XEN)
+ 			fprintf(fp, "   PMD: %lx => %lx [machine]\n", (ulong)pmd, pmd_pte);
+@@ -1988,6 +2001,7 @@ x86_64_pte_offset(ulong pmd_pte, ulong vaddr, int verbose, int IS_XEN)
+ 	ulong pte;
+ 
+ 	pte_paddr = pmd_pte & PHYSICAL_PAGE_MASK;
++	pte_paddr &= ~machdep->machspec->sme_mask;
+ 
+ 	if (IS_XEN) {
+ 		pte_paddr = xen_m2p(pte_paddr);
+@@ -1998,6 +2012,7 @@ x86_64_pte_offset(ulong pmd_pte, ulong vaddr, int verbose, int IS_XEN)
+ 	FILL_PTBL(pte_paddr, PHYSADDR, PAGESIZE());
+ 	ptep = ((ulong *)pte_paddr) + pte_index(vaddr);
+ 	pte = ULONG(machdep->ptbl + PAGEOFFSET(ptep));
++	pte &= ~machdep->machspec->sme_mask;
+ 	if (verbose) {
+ 		if (IS_XEN)
+ 			fprintf(fp, "   PTE: %lx => %lx [machine]\n", (ulong)ptep, pte);
+-- 
+2.37.1
+

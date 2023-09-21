@@ -1,0 +1,27 @@
+configure
+build_data.c
+cscope.out
+crashlib.a
+*.o
+crash
+CFLAGS.extra
+LDFLAGS.extra
+crash.spec
+*.gz
+*.rpm
+gdb.files
+gdb-7.6/
+extensions/defs.h
+extensions/*.so
+extensions/eppic
+
+# cscope files
+cscope.*
+ncscope.*
+
+# ctags files
+tags
+TAGS
+
+# Clang's compilation database file
+/compile_commands.json

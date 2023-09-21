@@ -1,0 +1,31 @@
+From ae52398a13fa9a238279114ed671c7c514c154ee Mon Sep 17 00:00:00 2001
+From: Sourabh Jain <sourabhjain@linux.ibm.com>
+Date: Mon, 9 May 2022 12:49:56 +0530
+Subject: [PATCH 01/18] ppc64: update the NR_CPUS to 8192
+
+Since the kernel commit 2d8ae638bb86 ("powerpc: Make the NR_CPUS max 8192")
+the NR_CPUS on Linux kernel ranges from 1-8192. So let's match NR_CPUS with
+the max NR_CPUS count on the Linux kernel.
+
+Signed-off-by: Sourabh Jain <sourabhjain@linux.ibm.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ defs.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/defs.h b/defs.h
+index 1e8360d65a3b..a6735d07b32f 100644
+--- a/defs.h
++++ b/defs.h
+@@ -136,7 +136,7 @@
+ #define NR_CPUS  (4096)
+ #endif
+ #ifdef PPC64
+-#define NR_CPUS  (2048)
++#define NR_CPUS  (8192)
+ #endif
+ #ifdef S390
+ #define NR_CPUS  (512)
+-- 
+2.30.2
+

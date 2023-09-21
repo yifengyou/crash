@@ -1,0 +1,40 @@
+From 931ea86070e9b56bf698ae3a4f20647d42325d6d Mon Sep 17 00:00:00 2001
+From: "Chunguang.Xu" <chunguang.xu@shopee.com>
+Date: Thu, 25 Aug 2022 12:07:20 +0800
+Subject: [PATCH 20/28] Add debian/ubuntu vmlinux location to default search
+ dirs
+
+Now crash cannot find debian/ubuntu kernel vmlinux, we need to
+explicitly specify the path to vmlinux. Try to add the debian
+vmlinux location to default search directories.
+
+Signed-off-by: Chunguang Xu <chunguang.xu@shopee.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ filesys.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/filesys.c b/filesys.c
+index a863f04eb250..c2ea78de821d 100644
+--- a/filesys.c
++++ b/filesys.c
+@@ -319,7 +319,7 @@ match_proc_version(void)
+ 
+ #define CREATE  1
+ #define DESTROY 0
+-#define DEFAULT_SEARCHDIRS 5
++#define DEFAULT_SEARCHDIRS 6
+ #define EXTRA_SEARCHDIRS 5
+ 
+ static char **
+@@ -336,6 +336,7 @@ build_searchdirs(int create, int *preferred)
+         	"/boot/",
+ 	        "/boot/efi/redhat",
+ 		"/boot/efi/EFI/redhat",
++		"/usr/lib/debug/boot/",
+         	"/",
+         	NULL
+ 	};
+-- 
+2.37.1
+

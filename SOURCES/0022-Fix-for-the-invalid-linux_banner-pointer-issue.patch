@@ -1,0 +1,41 @@
+From 598377606649ee3cdcc1694d975bed27005612ee Mon Sep 17 00:00:00 2001
+From: Lianbo Jiang <lijiang@redhat.com>
+Date: Wed, 16 Nov 2022 20:46:48 +0800
+Subject: [PATCH 22/28] Fix for the invalid linux_banner pointer issue
+
+Currently, crash may fail with the following error:
+
+  # ./crash -s vmlinux vmcore
+  WARNING: invalid linux_banner pointer: 65762078756e694c
+  crash: vmlinux and vmcore do not match!
+
+The reason is that the type of the symbol in the data segment may be
+defined as 'D' or 'd'. The crash only handled the type 'D', but it
+didn't deal with the type 'd'. For example:
+
+  # nm vmlinux | grep linux_banner
+  ffffffff827cfa80 d linux_banner
+
+It has been observed that a vmlinux compiled by clang has this type.
+Let's add the type 'd' recognition to solve such issue.
+
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ kernel.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/kernel.c b/kernel.c
+index bd0bf8c6cf03..2a1c1c391414 100644
+--- a/kernel.c
++++ b/kernel.c
+@@ -1060,6 +1060,7 @@ verify_version(void)
+ 	if (!(sp = symbol_search("linux_banner")))
+ 		error(FATAL, "linux_banner symbol does not exist?\n");
+ 	else if ((sp->type == 'R') || (sp->type == 'r') ||
++		 (THIS_KERNEL_VERSION >= LINUX(2,6,11) && (sp->type == 'D' || sp->type == 'd')) ||
+ 		 (machine_type("ARM") && sp->type == 'T') ||
+ 		 (machine_type("ARM64")))
+ 		linux_banner = symbol_value("linux_banner");
+-- 
+2.37.1
+

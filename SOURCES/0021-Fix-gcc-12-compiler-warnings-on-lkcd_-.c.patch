@@ -1,0 +1,102 @@
+From a4f8fe965e1ed0d27aff0cdf30e2c571da2e5356 Mon Sep 17 00:00:00 2001
+From: Kazuhito Hagio <k-hagio-ab@nec.com>
+Date: Thu, 1 Sep 2022 14:03:09 +0900
+Subject: [PATCH 21/28] Fix gcc-12 compiler warnings on lkcd_*.c
+
+Without the patch, the following gcc-12 compiler warnings are emitted
+for lkcd_*.c:
+
+lkcd_v1.c: In function 'dump_lkcd_environment_v1':
+lkcd_v1.c:252:20: warning: the comparison will always evaluate as 'true' for the address of 'dh_panic_string' will never be NULL [-Waddress]
+  252 |                 dh && dh->dh_panic_string &&
+      |                    ^~
+In file included from lkcd_v1.c:21:
+lkcd_vmdump_v1.h:108:30: note: 'dh_panic_string' declared here
+  108 |         char                 dh_panic_string[DUMP_PANIC_LEN];
+      |                              ^~~~~~~~~~~~~~~
+...
+
+Reported-by: Lianbo Jiang <lijiang@redhat.com>
+Signed-off-by: Kazuhito Hagio <k-hagio-ab@nec.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ lkcd_v1.c    | 3 +--
+ lkcd_v2_v3.c | 3 +--
+ lkcd_v5.c    | 3 +--
+ lkcd_v7.c    | 3 +--
+ lkcd_v8.c    | 3 +--
+ 5 files changed, 5 insertions(+), 10 deletions(-)
+
+diff --git a/lkcd_v1.c b/lkcd_v1.c
+index 5f891aeb1ce3..31bdc04c5fdd 100644
+--- a/lkcd_v1.c
++++ b/lkcd_v1.c
+@@ -249,8 +249,7 @@ dump_header_only:
+         lkcd_print("          dh_eip: %lx\n", dh->dh_eip);
+ 	lkcd_print("    dh_num_pages: %d\n", dh->dh_num_pages);
+         lkcd_print(" dh_panic_string: %s%s", dh->dh_panic_string,
+-		dh && dh->dh_panic_string &&
+-		strstr(dh->dh_panic_string, "\n") ? "" : "\n");
++		dh && strstr(dh->dh_panic_string, "\n") ? "" : "\n");
+         lkcd_print("         dh_time: %s\n",
+                         strip_linefeeds(ctime(&(dh->dh_time.tv_sec))));
+ 
+diff --git a/lkcd_v2_v3.c b/lkcd_v2_v3.c
+index 8635a7b07c77..edcb6637a55e 100644
+--- a/lkcd_v2_v3.c
++++ b/lkcd_v2_v3.c
+@@ -307,8 +307,7 @@ dump_header_only:
+ 	lkcd_print("    dh_num_pages: ");
+ 	lkcd_print(BITS32() ? "%ld\n" : "%d\n", dh->dh_num_pages);
+         lkcd_print(" dh_panic_string: %s%s", dh->dh_panic_string,
+-		dh && dh->dh_panic_string &&
+-		strstr(dh->dh_panic_string, "\n") ? "" : "\n");
++		dh && strstr(dh->dh_panic_string, "\n") ? "" : "\n");
+         lkcd_print("         dh_time: %s\n",
+                         strip_linefeeds(ctime(&(dh->dh_time.tv_sec))));
+ 
+diff --git a/lkcd_v5.c b/lkcd_v5.c
+index cb7634d094ec..e3bfa6f4b272 100644
+--- a/lkcd_v5.c
++++ b/lkcd_v5.c
+@@ -270,8 +270,7 @@ dump_header_only:
+ 	lkcd_print("    dh_num_pages: ");
+ 	lkcd_print(BITS32() ? "%ld\n" : "%d\n", dh->dh_num_pages);
+         lkcd_print(" dh_panic_string: %s%s", dh->dh_panic_string,
+-		dh && dh->dh_panic_string &&
+-		strstr(dh->dh_panic_string, "\n") ? "" : "\n");
++		dh && strstr(dh->dh_panic_string, "\n") ? "" : "\n");
+         lkcd_print("         dh_time: %s\n",
+                         strip_linefeeds(ctime(&(dh->dh_time.tv_sec))));
+ 
+diff --git a/lkcd_v7.c b/lkcd_v7.c
+index 608e1481f01d..97d99008635a 100644
+--- a/lkcd_v7.c
++++ b/lkcd_v7.c
+@@ -347,8 +347,7 @@ dump_header_only:
+ 	lkcd_print("    dh_num_pages: ");
+ 	lkcd_print(BITS32() ? "%ld\n" : "%d\n", dh->dh_num_pages);
+         lkcd_print(" dh_panic_string: %s%s", dh->dh_panic_string,
+-		dh && dh->dh_panic_string &&
+-		strstr(dh->dh_panic_string, "\n") ? "" : "\n");
++		dh && strstr(dh->dh_panic_string, "\n") ? "" : "\n");
+         lkcd_print("         dh_time: %s\n",
+                         strip_linefeeds(ctime(&(dh->dh_time.tv_sec))));
+ 
+diff --git a/lkcd_v8.c b/lkcd_v8.c
+index 3b355e056123..4167fa5e4292 100644
+--- a/lkcd_v8.c
++++ b/lkcd_v8.c
+@@ -543,8 +543,7 @@ dump_header_only:
+ 	lkcd_print("    dh_num_pages: ");
+ 	lkcd_print(BITS32() ? "%ld\n" : "%d\n", dh->dh_num_pages);
+         lkcd_print(" dh_panic_string: %s%s", dh->dh_panic_string,
+-		dh && dh->dh_panic_string &&
+-		strstr(dh->dh_panic_string, "\n") ? "" : "\n");
++		dh && strstr(dh->dh_panic_string, "\n") ? "" : "\n");
+ 	tv.tv_sec = dh->dh_time.tv_sec;
+         lkcd_print("         dh_time: %s\n",
+                         strip_linefeeds(ctime(&(tv.tv_sec))));
+-- 
+2.37.1
+

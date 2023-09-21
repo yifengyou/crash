@@ -1,0 +1,65 @@
+From 93cd670426aaf4951bceb8f24f0ce63c24e16f5d Mon Sep 17 00:00:00 2001
+From: Tao Liu <ltao@redhat.com>
+Date: Wed, 16 Nov 2022 20:09:22 +0800
+Subject: [PATCH 19/28] x86_64: Correct the identifier when locating the call
+ instruction
+
+The previous implementation to locate the call instruction is
+to strstr "call", then check whether the previous char is ' '
+or '\t'. The implementation is problematic. For example it
+cannot resolve the following disassembly string:
+
+"0xffffffffc0995378 <nfs41_callback_svc+344>:\tcall   0xffffffff8ecfa4c0 <schedule>\n"
+
+strstr will locate the "_call" and char check fails,
+as a result, extract_hex fails to get the calling address.
+
+NOTE: the issue is more likely to be reproduced when patch[1] applied.
+Because without patch[1], the disassembly string will be as follows,
+so the issue is no longer reproducible.
+
+"0xffffffffc0995378:\tcall   0xffffffff8ecfa4c0 <schedule>\n"
+
+Before the patch:
+    crash> bt 1472
+    PID: 1472     TASK: ffff8c121fa72f70  CPU: 18   COMMAND: "nfsv4.1-svc"
+     #0 [ffff8c16231a3db8] __schedule at ffffffff8ecf9ef3
+     #1 [ffff8c16231a3e40] schedule at ffffffff8ecfa4e9
+
+After the patch:
+    crash> bt 1472
+    PID: 1472     TASK: ffff8c121fa72f70  CPU: 18   COMMAND: "nfsv4.1-svc"
+     #0 [ffff8c16231a3db8] __schedule at ffffffff8ecf9ef3
+     #1 [ffff8c16231a3e40] schedule at ffffffff8ecfa4e9
+     #2 [ffff8c16231a3e50] nfs41_callback_svc at ffffffffc099537d [nfsv4]
+     #3 [ffff8c16231a3ec8] kthread at ffffffff8e6b966f
+     #4 [ffff8c16231a3f50] ret_from_fork at ffffffff8ed07898
+
+This patch fix the issue by strstr "\tcall" and " call", to
+locate the correct call instruction.
+
+[1]: https://listman.redhat.com/archives/crash-utility/2022-August/010085.html
+
+Signed-off-by: Tao Liu <ltao@redhat.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ x86_64.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/x86_64.c b/x86_64.c
+index b2a536e4b19c..292c240e887e 100644
+--- a/x86_64.c
++++ b/x86_64.c
+@@ -4429,8 +4429,7 @@ x86_64_function_called_by(ulong rip)
+ 	if (gdb_pass_through(buf, pc->tmpfile2, GNU_RETURN_ON_ERROR)) {
+ 	        rewind(pc->tmpfile2);
+ 	        while (fgets(buf, BUFSIZE, pc->tmpfile2)) {
+-			if ((p1 = strstr(buf, "callq")) &&
+-			    whitespace(*(p1-1))) { 
++			if ((p1 = strstr(buf, " callq")) || (p1 = strstr(buf, "\tcallq"))) {
+ 				if (extract_hex(p1, &value, NULLCHAR, TRUE)) 
+ 					break;
+ 			}
+-- 
+2.37.1
+

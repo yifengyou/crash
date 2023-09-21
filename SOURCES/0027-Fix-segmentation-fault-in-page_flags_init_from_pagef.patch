@@ -1,0 +1,39 @@
+From cdcf2d3f4c69ffa8a29b70120ee4fca6e390123b Mon Sep 17 00:00:00 2001
+From: Matias Ezequiel Vara Larsen <matiasevara@gmail.com>
+Date: Mon, 24 Oct 2022 11:35:29 +0200
+Subject: [PATCH 27/28] Fix segmentation fault in
+ page_flags_init_from_pageflag_names()
+
+When read_string() fails in page_flags_init_from_pageflag_names(),
+error() dereferences the name variable to print the string that the
+variable points to. However, name points to a string that is not in
+crash's memory-space thus triggering a segmentation fault.
+
+This patch replaces "%s" in the error message with "%lx" so the address
+is printed instead.  Also replaces "%ld" for mask with "%lx".
+
+[ kh: changed the conversion specifiers and commit message ]
+
+Signed-off-by: Matias Ezequiel Vara Larsen <matias.vara@vates.fr>
+Signed-off-by: Kazuhito Hagio <k-hagio-ab@nec.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ memory.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/memory.c b/memory.c
+index ff6b571361eb..ddbf458277f0 100644
+--- a/memory.c
++++ b/memory.c
+@@ -6599,7 +6599,7 @@ page_flags_init_from_pageflag_names(void)
+ 		}
+ 
+ 		if (!read_string((ulong)name, namebuf, BUFSIZE-1)) {
+-			error(INFO, "failed to read pageflag_names entry (i: %d  name: \"%s\"  mask: %ld)\n",
++			error(INFO, "failed to read pageflag_names entry (i: %d  name: %lx  mask: %lx)\n",
+ 				i, name, mask);
+ 			goto pageflags_fail;
+ 		}
+-- 
+2.37.1
+

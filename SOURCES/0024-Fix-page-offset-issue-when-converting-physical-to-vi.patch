@@ -1,0 +1,49 @@
+From d0726d96b92e5dacd1df56756e168a50a4e62589 Mon Sep 17 00:00:00 2001
+From: Tao Liu <ltao@redhat.com>
+Date: Mon, 19 Sep 2022 17:49:22 +0800
+Subject: [PATCH 24/28] Fix page offset issue when converting physical to
+ virtual address
+
+When trying to convert a physical address to its virtual
+address in dump_vmap_area() and dump_vmlist(), the vi->retval
+is added by 2 values: the page aligned address "pcheck"
+and page offset address "PAGEOFFSET(paddr)".
+
+However "paddr" is given by "pcheck", is also page aligned,
+so "PAGEOFFSET(paddr)" is always 0.
+
+In this patch, we will use PAGEOFFSET(vi->spec_addr) to give the
+page offset, vi->spec_addr is the physical address we'd like
+to convert, which contains the correct page offset.
+
+Signed-off-by: Tao Liu <ltao@redhat.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ memory.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/memory.c b/memory.c
+index e44b59d2e805..a60c3f9493f6 100644
+--- a/memory.c
++++ b/memory.c
+@@ -8861,7 +8861,7 @@ dump_vmlist(struct meminfo *vi)
+ 				    (vi->spec_addr < (paddr+PAGESIZE()))) {
+ 					if (vi->flags & GET_PHYS_TO_VMALLOC) {
+ 						vi->retval = pcheck +
+-						    PAGEOFFSET(paddr);
++						    PAGEOFFSET(vi->spec_addr);
+ 						return;
+ 				        } else
+ 						fprintf(fp,
+@@ -9010,7 +9010,7 @@ dump_vmap_area(struct meminfo *vi)
+ 				    (vi->spec_addr < (paddr+PAGESIZE()))) {
+ 					if (vi->flags & GET_PHYS_TO_VMALLOC) {
+ 						vi->retval = pcheck +
+-						    PAGEOFFSET(paddr);
++						    PAGEOFFSET(vi->spec_addr);
+ 						FREEBUF(ld->list_ptr);
+ 						return;
+ 				        } else
+-- 
+2.37.1
+

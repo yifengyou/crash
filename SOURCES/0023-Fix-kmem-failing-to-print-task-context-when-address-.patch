@@ -1,0 +1,57 @@
+From 488896b1ab0ca8bc4cc6aa608b6ee1744ae480e7 Mon Sep 17 00:00:00 2001
+From: Tao Liu <ltao@redhat.com>
+Date: Mon, 19 Sep 2022 17:49:21 +0800
+Subject: [PATCH 23/28] Fix "kmem" failing to print task context when address
+ is vmalloced stack
+
+When kernel enabled CONFIG_VMAP_STACK, stack can be allocated to
+vmalloced area. Currently crash didn't handle the case, as a result,
+"kmem" will not print the task context as expected. This patch fix the
+bug by checking if the address is a vmalloced stack first.
+
+Before:
+    crash> kmem ffffb7efce9bbe28
+       VMAP_AREA         VM_STRUCT                 ADDRESS RANGE                SIZE
+    ffff94eb9102c640  ffff94eb9102b140  ffffb7efce9b8000 - ffffb7efce9bd000    20480
+
+	  PAGE         PHYSICAL      MAPPING       INDEX CNT FLAGS
+    ffffdd28220dc000 1883700000                0        0  1 50000000000000
+
+After:
+    crash> kmem ffffb7efce9bbe28
+	PID: 847
+    COMMAND: "khungtaskd"
+       TASK: ffff94f8038f4000  [THREAD_INFO: ffff94f8038f4000]
+	CPU: 72
+      STATE: TASK_RUNNING (PANIC)
+
+       VMAP_AREA         VM_STRUCT                 ADDRESS RANGE                SIZE
+    ffff94eb9102c640  ffff94eb9102b140  ffffb7efce9b8000 - ffffb7efce9bd000    20480
+
+	  PAGE         PHYSICAL      MAPPING       INDEX CNT FLAGS
+    ffffdd28220dc000 1883700000                0        0  1 50000000000000
+
+Signed-off-by: Tao Liu <ltao@redhat.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ memory.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/memory.c b/memory.c
+index a31a430e2823..e44b59d2e805 100644
+--- a/memory.c
++++ b/memory.c
+@@ -13477,6 +13477,10 @@ kmem_search(struct meminfo *mi)
+ 	 *  Check for a valid mapped address.
+ 	 */
+ 	if ((mi->memtype == KVADDR) && IS_VMALLOC_ADDR(mi->spec_addr)) {
++		if ((task = stkptr_to_task(vaddr)) && (tc = task_to_context(task))) {
++			show_context(tc);
++			fprintf(fp, "\n");
++		}
+ 		if (kvtop(NULL, mi->spec_addr, &paddr, 0)) {
+ 			mi->flags = orig_flags | VMLIST_VERIFY;
+ 			dump_vmlist(mi);
+-- 
+2.37.1
+

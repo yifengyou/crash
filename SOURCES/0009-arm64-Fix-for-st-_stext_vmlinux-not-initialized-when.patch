@@ -1,0 +1,39 @@
+From b077c3569788f5eb5ddf85bf41026b452d253a90 Mon Sep 17 00:00:00 2001
+From: Qianli Zhao <qianli.zhao@horizon.ai>
+Date: Mon, 4 Jul 2022 16:40:01 +0800
+Subject: [PATCH 09/28] arm64: Fix for st->_stext_vmlinux not initialized when
+ set VA_BITS_ACTUAL
+
+Setting st->_stext_vmlinux to UNINITIALIZED to search for "_stext"
+from the vmlinux.  In the scenario where kaslr is disabled and
+without vmcoreinfo, crash will get the wrong MODULES/VMALLOC ranges
+and cause a failure in parsing a raw RAM dumpfile.
+
+Signed-off-by: Qianli Zhao <qianli.zhao@horizon.ai>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ arm64.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arm64.c b/arm64.c
+index 0f615cf52bef..b6b7aa11f4fe 100644
+--- a/arm64.c
++++ b/arm64.c
+@@ -149,6 +149,14 @@ arm64_init(int when)
+ 
+ 		ms = machdep->machspec;
+ 
++		/*
++		 * The st->_stext_vmlinux is needed in arm64_init(PRE_GDB) when a
++		 * dumpfile does not have vmcoreinfo and we use -m vabits_actual
++		 * option, e.g. a raw RAM dumpfile.
++		 */
++		if (ms->VA_BITS_ACTUAL)
++			st->_stext_vmlinux = UNINITIALIZED;
++
+ 		if (!ms->kimage_voffset && STREQ(pc->live_memsrc, "/dev/crash"))
+ 			ioctl(pc->mfd, DEV_CRASH_ARCH_DATA, &ms->kimage_voffset);
+ 
+-- 
+2.37.1
+

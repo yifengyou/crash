@@ -1,0 +1,53 @@
+From 6132fe21e0d5f2951c860f8850aeaacf1588dfb0 Mon Sep 17 00:00:00 2001
+From: Kazuhito Hagio <k-hagio-ab@nec.com>
+Date: Fri, 22 Jul 2022 13:44:50 +0900
+Subject: [PATCH 10/28] Fix gcc-11 compiler warnings on filesys.c
+
+Without the patch, the following gcc-11 compiler warnings are emitted
+for filesys.c:
+
+filesys.c: In function 'mount_point':
+filesys.c:718:17: warning: 'pclose' called on pointer returned from a mismatched allocation function [-Wmismatched-dealloc]
+  718 |                 pclose(mp);
+      |                 ^~~~~~~~~~
+filesys.c:709:27: note: returned from 'fopen'
+  709 |                 if ((mp = fopen(mntfile, "r")) == NULL)
+      |                           ^~~~~~~~~~~~~~~~~~~
+filesys.c:738:17: warning: 'pclose' called on pointer returned from a mismatched allocation function [-Wmismatched-dealloc]
+  738 |                 pclose(mp);
+      |                 ^~~~~~~~~~
+filesys.c:723:27: note: returned from 'fopen'
+  723 |                 if ((mp = fopen(mntfile, "r")) == NULL)
+      |                           ^~~~~~~~~~~~~~~~~~~
+
+Signed-off-by: Kazuhito Hagio <k-hagio-ab@nec.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ filesys.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/filesys.c b/filesys.c
+index 43cbe826fc79..a863f04eb250 100644
+--- a/filesys.c
++++ b/filesys.c
+@@ -715,7 +715,7 @@ mount_point(char *name)
+ 				continue;
+ 			found++;
+ 		}
+-		pclose(mp);
++		fclose(mp);
+ 
+ 		if (!(mount_points = (char **)malloc(sizeof(char *) * found)))
+ 			return FALSE;
+@@ -735,7 +735,7 @@ mount_point(char *name)
+                         	mount_points_gathered++, i++;
+ 			}
+                 }
+-        	pclose(mp);
++		fclose(mp);
+ 
+ 		if (CRASHDEBUG(2))
+ 			for (i = 0; i < mount_points_gathered; i++)
+-- 
+2.37.1
+

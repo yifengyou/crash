@@ -1,0 +1,44 @@
+From 6bc3b74c6e2b0aaebe1bc164594e53b010efef56 Mon Sep 17 00:00:00 2001
+From: Kazuhito Hagio <k-hagio-ab@nec.com>
+Date: Fri, 10 Jun 2022 15:52:34 +0900
+Subject: [PATCH 17/18] sbitmapq: Fix for kernels without struct
+ wait_queue_head
+
+The current struct wait_queue_head was renamed by kernel commit
+9d9d676f595b ("sched/wait: Standardize internal naming of wait-queue heads")
+at Linux 4.13.  Without the patch, on earlier kernels the "sbitmapq"
+command fails with the following error:
+
+  crash> sbitmapq ffff8801790b3b50
+  depth = 128
+  busy = 0
+  bits_per_word = 32
+  ...
+  sbitmapq: invalid structure member offset: wait_queue_head_head
+            FILE: sbitmap.c  LINE: 344  FUNCTION: sbitmap_queue_show()
+
+Signed-off-by: Kazuhito Hagio <k-hagio-ab@nec.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ sbitmap.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/sbitmap.c b/sbitmap.c
+index bb2f19e6207b..be5d30a8ea88 100644
+--- a/sbitmap.c
++++ b/sbitmap.c
+@@ -341,7 +341,10 @@ static void sbitmap_queue_show(const struct sbitmap_queue_context *sqc,
+ 	sbq_wait_state_size = SIZE(sbq_wait_state);
+ 	wait_cnt_off = OFFSET(sbq_wait_state_wait_cnt);
+ 	wait_off = OFFSET(sbq_wait_state_wait);
+-	list_head_off = OFFSET(wait_queue_head_head);
++	if (VALID_MEMBER(wait_queue_head_head)) /* 4.13 and later */
++		list_head_off = OFFSET(wait_queue_head_head);
++	else
++		list_head_off = OFFSET(__wait_queue_head_task_list);
+ 
+ 	sbq_wait_state_buf = GETBUF(sbq_wait_state_size);
+ 
+-- 
+2.30.2
+

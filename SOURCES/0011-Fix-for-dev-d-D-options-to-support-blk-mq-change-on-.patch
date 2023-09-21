@@ -1,0 +1,121 @@
+From 68ce0b9a35d77d767872dd1a729c50e4695a30a8 Mon Sep 17 00:00:00 2001
+From: Lianbo Jiang <lijiang@redhat.com>
+Date: Thu, 2 Jun 2022 20:12:56 +0800
+Subject: [PATCH 11/18] Fix for "dev -d|-D" options to support blk-mq change on
+ Linux v5.18-rc1
+
+Kernel commit 4e5cc99e1e48 ("blk-mq: manage hctx map via xarray") removed
+the "queue_hw_ctx" member from struct request_queue at Linux v5.18-rc1,
+and replaced it with a struct xarray "hctx_table". Without the patch, the
+"dev -d|-D" options will print an error:
+
+  crash> dev -d
+  MAJOR GENDISK            NAME       REQUEST_QUEUE      TOTAL  READ WRITE
+
+  dev: invalid structure member offset: request_queue_queue_hw_ctx
+
+With the patch:
+  crash> dev -d
+  MAJOR GENDISK            NAME       REQUEST_QUEUE      TOTAL  READ WRITE
+      8 ffff8e99d0a1ae00   sda        ffff8e9c14c59980      10     6     4
+
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ defs.h    |  1 +
+ dev.c     | 42 +++++++++++++++++++++++++++++++++---------
+ symbols.c |  2 ++
+ 3 files changed, 36 insertions(+), 9 deletions(-)
+
+diff --git a/defs.h b/defs.h
+index 2681586a33dc..7d3b73422f48 100644
+--- a/defs.h
++++ b/defs.h
+@@ -2180,6 +2180,7 @@ struct offset_table {                    /* stash of commonly-used offsets */
+ 	long blk_mq_tags_breserved_tags;
+ 	long blk_mq_tags_nr_reserved_tags;
+ 	long blk_mq_tags_rqs;
++	long request_queue_hctx_table;
+ };
+ 
+ struct size_table {         /* stash of commonly-used sizes */
+diff --git a/dev.c b/dev.c
+index 4be4c96df8b0..0172c83ffaea 100644
+--- a/dev.c
++++ b/dev.c
+@@ -4369,20 +4369,42 @@ static void get_mq_diskio_from_hw_queues(ulong q, struct diskio *dio)
+ 	uint cnt = 0;
+ 	ulong addr = 0, hctx_addr = 0;
+ 	ulong *hctx_array = NULL;
++	struct list_pair *lp = NULL;
++
++	if (VALID_MEMBER(request_queue_hctx_table)) {
++		addr = q + OFFSET(request_queue_hctx_table);
++		cnt = do_xarray(addr, XARRAY_COUNT, NULL);
++		lp = (struct list_pair *)GETBUF(sizeof(struct list_pair) * (cnt + 1));
++		if (!lp)
++			error(FATAL, "fail to get memory for list_pair.\n");
++		lp[0].index = cnt;
++		cnt = do_xarray(addr, XARRAY_GATHER, lp);
++	} else {
++		addr = q + OFFSET(request_queue_nr_hw_queues);
++		readmem(addr, KVADDR, &cnt, sizeof(uint),
++			"request_queue.nr_hw_queues", FAULT_ON_ERROR);
+ 
+-	addr = q + OFFSET(request_queue_nr_hw_queues);
+-	readmem(addr, KVADDR, &cnt, sizeof(uint),
+-		"request_queue.nr_hw_queues", FAULT_ON_ERROR);
+-
+-	addr = q + OFFSET(request_queue_queue_hw_ctx);
+-	readmem(addr, KVADDR, &hctx_addr, sizeof(void *),
+-		"request_queue.queue_hw_ctx", FAULT_ON_ERROR);
++		addr = q + OFFSET(request_queue_queue_hw_ctx);
++		readmem(addr, KVADDR, &hctx_addr, sizeof(void *),
++			"request_queue.queue_hw_ctx", FAULT_ON_ERROR);
++	}
+ 
+ 	hctx_array = (ulong *)GETBUF(sizeof(void *) * cnt);
+-	if (!hctx_array)
++	if (!hctx_array) {
++		if (lp)
++			FREEBUF(lp);
+ 		error(FATAL, "fail to get memory for the hctx_array\n");
++	}
++
++	if (lp && hctx_array) {
++		uint i;
++
++		/* copy it from list_pair to hctx_array */
++		for (i = 0; i < cnt; i++)
++			hctx_array[i] = (ulong)lp[i].value;
+ 
+-	if (!readmem(hctx_addr, KVADDR, hctx_array, sizeof(void *) * cnt,
++		FREEBUF(lp);
++	} else if (!readmem(hctx_addr, KVADDR, hctx_array, sizeof(void *) * cnt,
+ 			"request_queue.queue_hw_ctx[]", RETURN_ON_ERROR)) {
+ 		FREEBUF(hctx_array);
+ 		return;
+@@ -4755,6 +4777,8 @@ void diskio_init(void)
+ 			"request_queue", "queue_hw_ctx");
+ 		MEMBER_OFFSET_INIT(request_queue_nr_hw_queues,
+ 			"request_queue", "nr_hw_queues");
++		MEMBER_OFFSET_INIT(request_queue_hctx_table,
++			"request_queue", "hctx_table");
+ 		MEMBER_OFFSET_INIT(blk_mq_ctx_rq_dispatched, "blk_mq_ctx",
+ 			"rq_dispatched");
+ 		MEMBER_OFFSET_INIT(blk_mq_ctx_rq_completed, "blk_mq_ctx",
+diff --git a/symbols.c b/symbols.c
+index c1f09556d710..bee1faf92c83 100644
+--- a/symbols.c
++++ b/symbols.c
+@@ -10403,6 +10403,8 @@ dump_offset_table(char *spec, ulong makestruct)
+ 		OFFSET(request_queue_queue_hw_ctx));
+ 	fprintf(fp, "    request_queue_nr_hw_queues: %ld\n",
+ 		OFFSET(request_queue_nr_hw_queues));
++	fprintf(fp, "      request_queue_hctx_table: %ld\n",
++		OFFSET(request_queue_hctx_table));
+ 	fprintf(fp, "      blk_mq_ctx_rq_dispatched: %ld\n",
+ 		OFFSET(blk_mq_ctx_rq_dispatched));
+ 	fprintf(fp, "       blk_mq_ctx_rq_completed: %ld\n",
+-- 
+2.30.2
+

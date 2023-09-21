@@ -1,0 +1,34 @@
+From 619e36c18791333ee3a7fea759ce20396e711a46 Mon Sep 17 00:00:00 2001
+From: Kazuhito Hagio <k-hagio-ab@nec.com>
+Date: Mon, 22 Aug 2022 11:59:46 +0900
+Subject: [PATCH 15/28] Makefile: Fix unnecessary re-patching with
+ coreutils-9.0
+
+"sum" command in coreutils-9.0 (e.g. Fedora 36) started to output a file
+name.  As a result, "make" always detects a change of gdb-10.2.patch
+wrongly and re-applies it unnecessarily.
+
+Use standard input to fix it and "md5sum" to improve detection.
+
+Signed-off-by: Kazuhito Hagio <k-hagio-ab@nec.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 059759b3e4ab..dd81df6c198c 100644
+--- a/Makefile
++++ b/Makefile
+@@ -269,7 +269,7 @@ rebuild:
+ 	@if [ ! -f ${GDB}/${GDB}.patch ]; then \
+ 	  touch ${GDB}/${GDB}.patch; fi
+ 	@if [ -f ${GDB}.patch ] && [ -s ${GDB}.patch ] && \
+-	  [ "`sum ${GDB}.patch`" != "`sum ${GDB}/${GDB}.patch`" ]; then \
++	  [ "`md5sum < ${GDB}.patch`" != "`md5sum < ${GDB}/${GDB}.patch`" ]; then \
+ 	  (sh -x ${GDB}.patch ${TARGET}; patch -N -p0 -r- --fuzz=0 < ${GDB}.patch; cp ${GDB}.patch ${GDB}; cd ${GDB}; \
+ 	  $(MAKE) CRASH_TARGET=${TARGET}) \
+ 	else (cd ${GDB}/gdb; $(MAKE) CRASH_TARGET=${TARGET}); fi
+-- 
+2.37.1
+

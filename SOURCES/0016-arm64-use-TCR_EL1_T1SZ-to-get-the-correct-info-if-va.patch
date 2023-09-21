@@ -1,0 +1,111 @@
+From 28a41ec7a471474094d8ab39f3a69b44d0f9ebcf Mon Sep 17 00:00:00 2001
+From: Huang Shijie <shijie@os.amperecomputing.com>
+Date: Mon, 22 Aug 2022 09:29:32 +0000
+Subject: [PATCH 16/28] arm64: use TCR_EL1_T1SZ to get the correct info if
+ vabits_actual is missing
+
+After kernel commit 0d9b1ffefabe ("arm64: mm: make vabits_actual a build
+time constant if possible"), the vabits_actual is not compiled to kernel
+symbols when "VA_BITS > 48" is false.
+
+So the crash will not find the vabits_actual symbol, and it will fail
+in the end like this:
+
+  # ./crash
+  ...
+  WARNING: VA_BITS: calculated: 46  vmcoreinfo: 48
+  crash: invalid kernel virtual address: ffff88177ffff000  type: "pud page"
+
+This patch introduces the arm64_set_va_bits_by_tcr(), and if crash cannot
+find vabits_actual symbol, it will use the TCR_EL1_T1SZ register to get
+the correct VA_BITS_ACTUAL/VA_BITS/VA_START.
+
+Tested this patch with:
+  1.) the live mode with /proc/kcore
+  2.) the kdump file with /proc/vmcore.
+
+Signed-off-by: Huang Shijie <shijie@os.amperecomputing.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ arm64.c | 51 ++++++++++++++++++++++++++++++++++-----------------
+ 1 file changed, 34 insertions(+), 17 deletions(-)
+
+diff --git a/arm64.c b/arm64.c
+index b6b7aa11f4fe..c3e26a371a61 100644
+--- a/arm64.c
++++ b/arm64.c
+@@ -4586,6 +4586,36 @@ arm64_IS_VMALLOC_ADDR(ulong vaddr)
+                 (vaddr >= ms->modules_vaddr && vaddr <= ms->modules_end));
+ }
+ 
++/* Return TRUE if we succeed, return FALSE on failure. */
++static int
++arm64_set_va_bits_by_tcr(void)
++{
++	ulong value;
++	char *string;
++
++	if ((string = pc->read_vmcoreinfo("NUMBER(TCR_EL1_T1SZ)")) ||
++	    (string = pc->read_vmcoreinfo("NUMBER(tcr_el1_t1sz)"))) {
++		/* See ARMv8 ARM for the description of
++		 * TCR_EL1.T1SZ and how it can be used
++		 * to calculate the vabits_actual
++		 * supported by underlying kernel.
++		 *
++		 * Basically:
++		 * vabits_actual = 64 - T1SZ;
++		 */
++		value = 64 - strtoll(string, NULL, 0);
++		if (CRASHDEBUG(1))
++			fprintf(fp,  "vmcoreinfo : vabits_actual: %ld\n", value);
++		free(string);
++		machdep->machspec->VA_BITS_ACTUAL = value;
++		machdep->machspec->VA_BITS = value;
++		machdep->machspec->VA_START = _VA_START(machdep->machspec->VA_BITS_ACTUAL);
++		return TRUE;
++	}
++
++	return FALSE;
++}
++
+ static void 
+ arm64_calc_VA_BITS(void)
+ {
+@@ -4616,23 +4646,8 @@ arm64_calc_VA_BITS(void)
+ 		} else if (ACTIVE())
+ 			error(FATAL, "cannot determine VA_BITS_ACTUAL: please use /proc/kcore\n");
+ 		else {
+-			if ((string = pc->read_vmcoreinfo("NUMBER(TCR_EL1_T1SZ)")) ||
+-			    (string = pc->read_vmcoreinfo("NUMBER(tcr_el1_t1sz)"))) {
+-				/* See ARMv8 ARM for the description of
+-				 * TCR_EL1.T1SZ and how it can be used
+-				 * to calculate the vabits_actual
+-				 * supported by underlying kernel.
+-				 *
+-				 * Basically:
+-				 * vabits_actual = 64 - T1SZ;
+-				 */
+-				value = 64 - strtoll(string, NULL, 0);
+-				if (CRASHDEBUG(1))
+-					fprintf(fp,  "vmcoreinfo : vabits_actual: %ld\n", value);
+-				free(string);
+-				machdep->machspec->VA_BITS_ACTUAL = value;
+-				machdep->machspec->VA_BITS = value;
+-				machdep->machspec->VA_START = _VA_START(machdep->machspec->VA_BITS_ACTUAL);
++			if (arm64_set_va_bits_by_tcr()) {
++				/* nothing */
+ 			} else if (machdep->machspec->VA_BITS_ACTUAL) {
+ 				machdep->machspec->VA_BITS = machdep->machspec->VA_BITS_ACTUAL;
+ 				machdep->machspec->VA_START = _VA_START(machdep->machspec->VA_BITS_ACTUAL);
+@@ -4654,6 +4669,8 @@ arm64_calc_VA_BITS(void)
+ 		 */
+ 		machdep->flags |= FLIPPED_VM;
+ 		return;
++	} else if (arm64_set_va_bits_by_tcr()) {
++		return;
+ 	}
+ 
+ 	if (!(sp = symbol_search("swapper_pg_dir")) &&
+-- 
+2.37.1
+

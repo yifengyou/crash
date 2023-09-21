@@ -1,0 +1,96 @@
+From 0f162febebc4d11a165dd40cee00f3b0ba691a52 Mon Sep 17 00:00:00 2001
+From: Qi Zheng <zhengqi.arch@bytedance.com>
+Date: Tue, 24 May 2022 20:25:54 +0800
+Subject: [PATCH 08/18] bt: arm64: add support for 'bt -n idle'
+
+The '-n idle' option of bt command can help us filter the
+stack of the idle process when debugging the dumpfiles
+captured by kdump.
+
+This patch supports this feature on ARM64.
+
+Signed-off-by: Qi Zheng <zhengqi.arch@bytedance.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ arm64.c  | 19 ++++++++++++++++---
+ help.c   |  2 +-
+ kernel.c |  3 ++-
+ 3 files changed, 19 insertions(+), 5 deletions(-)
+
+diff --git a/arm64.c b/arm64.c
+index 65f6cdf69fa6..0f615cf52bef 100644
+--- a/arm64.c
++++ b/arm64.c
+@@ -3681,6 +3681,12 @@ arm64_get_dumpfile_stackframe(struct bt_info *bt, struct arm64_stackframe *frame
+ {
+ 	struct machine_specific *ms = machdep->machspec;
+ 	struct arm64_pt_regs *ptregs;
++	bool skip = false;
++
++	if (bt->flags & BT_SKIP_IDLE) {
++		skip = true;
++		bt->flags &= ~BT_SKIP_IDLE;
++	}
+ 
+ 	if (!ms->panic_task_regs ||
+ 	    (!ms->panic_task_regs[bt->tc->processor].sp && 
+@@ -3713,8 +3719,11 @@ try_kernel:
+ 	}
+ 
+ 	if (arm64_in_kdump_text(bt, frame) || 
+-	    arm64_in_kdump_text_on_irq_stack(bt))
++	    arm64_in_kdump_text_on_irq_stack(bt)) {
+ 		bt->flags |= BT_KDUMP_ADJUST;
++		if (skip && is_idle_thread(bt->task))
++			bt->flags |= BT_SKIP_IDLE;
++	}
+ 
+ 	return TRUE;
+ }
+@@ -3738,10 +3747,14 @@ arm64_get_stack_frame(struct bt_info *bt, ulong *pcp, ulong *spp)
+ 	int ret;
+ 	struct arm64_stackframe stackframe = { 0 };
+ 
+-	if (DUMPFILE() && is_task_active(bt->task))
++	if (DUMPFILE() && is_task_active(bt->task)) {
+ 		ret = arm64_get_dumpfile_stackframe(bt, &stackframe);
+-	else
++	} else {
++		if (bt->flags & BT_SKIP_IDLE)
++			bt->flags &= ~BT_SKIP_IDLE;
++
+ 		ret = arm64_get_stackframe(bt, &stackframe);
++	}
+ 
+ 	if (!ret)
+ 		error(WARNING, 
+diff --git a/help.c b/help.c
+index e1bbc5abe029..99214c1590fa 100644
+--- a/help.c
++++ b/help.c
+@@ -1915,7 +1915,7 @@ char *help_bt[] = {
+ "       -a  displays the stack traces of the active task on each CPU.",
+ "           (only applicable to crash dumps)",
+ "       -A  same as -a, but also displays vector registers (S390X only).",
+-"  -n idle  filter the stack of idle tasks (x86_64).",
++"  -n idle  filter the stack of idle tasks (x86_64, arm64).",
+ "           (only applicable to crash dumps)",
+ "       -p  display the stack trace of the panic task only.",
+ "           (only applicable to crash dumps)",
+diff --git a/kernel.c b/kernel.c
+index 411e9da1e54f..a521ef30cdb0 100644
+--- a/kernel.c
++++ b/kernel.c
+@@ -2673,7 +2673,8 @@ cmd_bt(void)
+ 			break;
+ 
+ 		case 'n':
+-			if (machine_type("X86_64") && STREQ(optarg, "idle"))
++			if ((machine_type("X86_64") || machine_type("ARM64")) &&
++			    STREQ(optarg, "idle"))
+ 				bt->flags |= BT_SKIP_IDLE;
+ 			else
+ 				option_not_supported(c);
+-- 
+2.30.2
+

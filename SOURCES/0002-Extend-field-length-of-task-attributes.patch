@@ -1,0 +1,84 @@
+From 6bc60e8cc87701c8f68c1cda56dd7120b5565700 Mon Sep 17 00:00:00 2001
+From: Kazuhito Hagio <k-hagio-ab@nec.com>
+Date: Wed, 22 Jun 2022 08:32:59 +0900
+Subject: [PATCH 02/28] Extend field length of task attributes
+
+Nowadays, some machines have many CPU cores and memory, and some
+distributions have a larger kernel.pid_max parameter, e.g. 7 digits.
+This impairs the readability of a few commands, especially "ps" and
+"ps -l|-m" options.
+
+Let's extend the field length of the task attributes, PID, CPU, VSZ,
+and RSS to improve the readability.
+
+Without the patch:
+  crash> ps
+     PID    PPID  CPU       TASK        ST  %MEM     VSZ    RSS  COMM
+  ...
+    2802197  2699997   2  ffff916f63c40000  IN   0.0  307212  10688  timer
+    2802277      1   0  ffff9161a25bb080  IN   0.0  169040   2744  gpg-agent
+    2806711  3167854  10  ffff9167fc498000  IN   0.0  127208   6508  su
+    2806719  2806711   1  ffff91633c3a48c0  IN   0.0   29452   6416  bash
+    2988346      1   5  ffff916f7c629840  IN   2.8 9342476 1917384  qemu-kvm
+
+With the patch:
+  crash> ps
+        PID    PPID  CPU       TASK        ST  %MEM      VSZ      RSS  COMM
+  ...
+    2802197 2699997   2  ffff916f63c40000  IN   0.0   307212    10688  timer
+    2802277       1   0  ffff9161a25bb080  IN   0.0   169040     2744  gpg-agent
+    2806711 3167854  10  ffff9167fc498000  IN   0.0   127208     6508  su
+    2806719 2806711   1  ffff91633c3a48c0  IN   0.0    29452     6416  bash
+    2988346       1   5  ffff916f7c629840  IN   2.8  9342476  1917384  qemu-kvm
+
+Signed-off-by: Kazuhito Hagio <k-hagio-ab@nec.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ task.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/task.c b/task.c
+index 864c838637ee..071c787fbfa5 100644
+--- a/task.c
++++ b/task.c
+@@ -3828,7 +3828,7 @@ show_ps_data(ulong flag, struct task_context *tc, struct psinfo *psi)
+ 	} else
+ 		fprintf(fp, "  ");
+ 
+-	fprintf(fp, "%5ld  %5ld  %2s  %s %3s",
++	fprintf(fp, "%7ld %7ld %3s  %s %3s",
+ 		tc->pid, task_to_pid(tc->ptask),
+ 		task_cpu(tc->processor, buf2, !VERBOSE),
+ 		task_pointer_string(tc, flag & PS_KSTACKP, buf3),
+@@ -3838,8 +3838,8 @@ show_ps_data(ulong flag, struct task_context *tc, struct psinfo *psi)
+ 	if (strlen(buf1) == 3)
+ 		mkstring(buf1, 4, CENTER|RJUST, NULL);
+ 	fprintf(fp, "%s ", buf1);
+-	fprintf(fp, "%7ld ", (tm->total_vm * PAGESIZE())/1024);
+-	fprintf(fp, "%6ld  ", (tm->rss * PAGESIZE())/1024);
++	fprintf(fp, "%8ld ", (tm->total_vm * PAGESIZE())/1024);
++	fprintf(fp, "%8ld  ", (tm->rss * PAGESIZE())/1024);
+ 	if (is_kernel_thread(tc->task))
+ 		fprintf(fp, "[%s]\n", tc->comm);
+ 	else
+@@ -3856,7 +3856,7 @@ show_ps(ulong flag, struct psinfo *psi)
+ 
+ 	if (!(flag & ((PS_EXCLUSIVE & ~PS_ACTIVE)|PS_NO_HEADER))) 
+ 		fprintf(fp, 
+-		    "   PID    PPID  CPU %s  ST  %%MEM     VSZ    RSS  COMM\n",
++		    "      PID    PPID  CPU %s  ST  %%MEM      VSZ      RSS  COMM\n",
+ 			flag & PS_KSTACKP ?
+ 			mkstring(buf, VADDR_PRLEN, CENTER|RJUST, "KSTACKP") :
+ 			mkstring(buf, VADDR_PRLEN, CENTER, "TASK"));
+@@ -7713,7 +7713,7 @@ print_task_header(FILE *out, struct task_context *tc, int newline)
+ 	char buf[BUFSIZE];
+ 	char buf1[BUFSIZE];
+ 
+-        fprintf(out, "%sPID: %-5ld  TASK: %s  CPU: %-2s  COMMAND: \"%s\"\n",
++        fprintf(out, "%sPID: %-7ld  TASK: %s  CPU: %-3s  COMMAND: \"%s\"\n",
+ 		newline ? "\n" : "", tc->pid, 
+ 		mkstring(buf1, VADDR_PRLEN, LJUST|LONG_HEX, MKSTR(tc->task)),
+ 		task_cpu(tc->processor, buf, !VERBOSE), tc->comm);
+-- 
+2.37.1
+

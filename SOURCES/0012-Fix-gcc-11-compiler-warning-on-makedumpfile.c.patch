@@ -1,0 +1,38 @@
+From 9bb8a48d9424fc00ccd073125cdee9613b389cc6 Mon Sep 17 00:00:00 2001
+From: Kazuhito Hagio <k-hagio-ab@nec.com>
+Date: Fri, 22 Jul 2022 13:44:50 +0900
+Subject: [PATCH 12/28] Fix gcc-11 compiler warning on makedumpfile.c
+
+Without the patch, the following gcc-11 compiler warning is emitted for
+makedumpfile.c:
+
+In function 'flattened_format_get_osrelease',
+    inlined from 'check_flattened_format' at makedumpfile.c:236:3:
+makedumpfile.c:392:9: warning: 'fclose' called on pointer returned from a mismatched allocation function [-Wmismatched-dealloc]
+  392 |         fclose(pipe);
+      |         ^~~~~~~~~~~~
+makedumpfile.c: In function 'check_flattened_format':
+makedumpfile.c:380:21: note: returned from 'popen'
+  380 |         if ((pipe = popen(buf, "r")) == NULL)
+      |                     ^~~~~~~~~~~~~~~
+
+Signed-off-by: Kazuhito Hagio <k-hagio-ab@nec.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ makedumpfile.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/makedumpfile.c b/makedumpfile.c
+index ebf24f56da2c..26d12b638ecd 100644
+--- a/makedumpfile.c
++++ b/makedumpfile.c
+@@ -389,5 +389,5 @@ flattened_format_get_osrelease(char *file)
+ 		}
+ 	}
+ 
+-	fclose(pipe);
++	pclose(pipe);
+ }
+-- 
+2.37.1
+

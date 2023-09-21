@@ -1,0 +1,76 @@
+From 74759e0e9736e86c7d2439bfe74ca5eb51b0a52b Mon Sep 17 00:00:00 2001
+From: Tao Liu <ltao@redhat.com>
+Date: Mon, 19 Sep 2022 17:49:23 +0800
+Subject: [PATCH 25/28] Let "kmem" print task context with physical address
+
+Patch [1] enables "kmem" to print task context if the given virtual
+address is a vmalloced stack.
+
+This patch lets "kmem" print task context also when the given address
+is a physical address.
+
+Before:
+    crash> kmem 1883700e28
+       VMAP_AREA         VM_STRUCT                 ADDRESS RANGE                SIZE
+    ffff94eb9102c640  ffff94eb9102b140  ffffb7efce9b8000 - ffffb7efce9bd000    20480
+
+	  PAGE         PHYSICAL      MAPPING       INDEX CNT FLAGS
+    ffffdd28220dc000 1883700000                0        0  1 50000000000000
+
+After:
+    crash> kmem 1883700e28
+	PID: 847
+    COMMAND: "khungtaskd"
+       TASK: ffff94f8038f4000  [THREAD_INFO: ffff94f8038f4000]
+	CPU: 72
+      STATE: TASK_RUNNING (PANIC)
+
+       VMAP_AREA         VM_STRUCT                 ADDRESS RANGE                SIZE
+    ffff94eb9102c640  ffff94eb9102b140  ffffb7efce9b8000 - ffffb7efce9bd000    20480
+
+	  PAGE         PHYSICAL      MAPPING       INDEX CNT FLAGS
+    ffffdd28220dc000 1883700000                0        0  1 50000000000000
+
+[1]: https://listman.redhat.com/archives/crash-utility/2022-September/010115.html
+
+[ kh: squashed the 4/4 patch into 3/4 ]
+
+Signed-off-by: Tao Liu <ltao@redhat.com>
+Signed-off-by: Kazuhito Hagio <k-hagio-ab@nec.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ memory.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/memory.c b/memory.c
+index a60c3f9493f6..ff6b571361eb 100644
+--- a/memory.c
++++ b/memory.c
+@@ -13506,6 +13506,10 @@ kmem_search(struct meminfo *mi)
+ 		mi->flags &= ~GET_PHYS_TO_VMALLOC;
+ 
+ 		if (mi->retval) {
++			if ((task = stkptr_to_task(mi->retval)) && (tc = task_to_context(task))) {
++				show_context(tc);
++				fprintf(fp, "\n");
++			}
+ 			if ((sp = value_search(mi->retval, &offset))) {
+                         	show_symbol(sp, offset, 
+ 					SHOW_LINENUM | SHOW_RADIX());
+@@ -13562,11 +13566,11 @@ kmem_search(struct meminfo *mi)
+ 	/*
+ 	 *  Check whether it's a current task or stack address.
+ 	 */
+-	if ((mi->memtype == KVADDR) && (task = vaddr_in_task_struct(vaddr)) &&
++	if ((mi->memtype & (KVADDR|PHYSADDR)) && (task = vaddr_in_task_struct(vaddr)) &&
+ 	    (tc = task_to_context(task))) {
+ 		show_context(tc);
+ 		fprintf(fp, "\n");
+-	} else if ((mi->memtype == KVADDR) && (task = stkptr_to_task(vaddr)) &&
++	} else if ((mi->memtype & (KVADDR|PHYSADDR)) && (task = stkptr_to_task(vaddr)) &&
+ 	    (tc = task_to_context(task))) {
+ 		show_context(tc);
+ 		fprintf(fp, "\n");
+-- 
+2.37.1
+

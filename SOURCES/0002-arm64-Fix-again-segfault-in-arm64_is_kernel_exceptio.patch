@@ -1,0 +1,45 @@
+From 6c8cd9b5dcf48221e5f75fc5850bb4719d77acce Mon Sep 17 00:00:00 2001
+From: HATAYAMA Daisuke <d.hatayama@fujitsu.com>
+Date: Wed, 7 Jun 2023 18:37:34 +0900
+Subject: [PATCH] arm64: Fix again segfault in
+ arm64_is_kernel_exception_frame() when corrupt stack pointer address is given
+
+This is the second trial from the commit
+9868ebc8e648e5791764a51567a23efae7170d9b that was reverted at the
+previous commit.
+
+As described in the previous commit, result of STACK_OFFSET_TYPE() can
+be an address out of bt->stackbuf and hence the address needs to be
+checked prior to being referred to as an pt_regs object.
+
+So, to fix the issue, let's check if stkptr points to within the range
+of the kernel stack first.
+
+[ kh: added a warning at Lianbo's suggestion ]
+
+Signed-off-by: HATAYAMA Daisuke <d.hatayama@fujitsu.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ arm64.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arm64.c b/arm64.c
+index efbdccbec9d3..67b1a2244810 100644
+--- a/arm64.c
++++ b/arm64.c
+@@ -2381,6 +2381,12 @@ arm64_is_kernel_exception_frame(struct bt_info *bt, ulong stkptr)
+         struct arm64_pt_regs *regs;
+ 	struct machine_specific *ms = machdep->machspec;
+ 
++	if (stkptr > STACKSIZE() && !INSTACK(stkptr, bt)) {
++		if (CRASHDEBUG(1))
++			error(WARNING, "stkptr: %lx is outside the kernel stack range\n", stkptr);
++		return FALSE;
++	}
++
+         regs = (struct arm64_pt_regs *)&bt->stackbuf[(ulong)(STACK_OFFSET_TYPE(stkptr))];
+ 
+ 	if (INSTACK(regs->sp, bt) && INSTACK(regs->regs[29], bt) && 
+-- 
+2.37.1
+

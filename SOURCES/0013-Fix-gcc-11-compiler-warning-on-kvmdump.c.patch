@@ -1,0 +1,61 @@
+From 75739a08e952b6bd7434f4625a8fbe921361cbe8 Mon Sep 17 00:00:00 2001
+From: Kazuhito Hagio <k-hagio-ab@nec.com>
+Date: Fri, 22 Jul 2022 13:44:50 +0900
+Subject: [PATCH 13/28] Fix gcc-11 compiler warning on kvmdump.c
+
+Without the patch, the following gcc-11 compiler warning is emitted for
+kvmdump.c:
+
+In function 'write_mapfile_registers',
+    inlined from 'write_mapfile_trailer' at kvmdump.c:947:3,
+    inlined from 'kvmdump_init' at kvmdump.c:145:4:
+kvmdump.c:972:13: warning: 'write' reading 8 bytes from a region of size 4 [-Wstringop-overread]
+  972 |         if (write(kvm->mapfd, &kvm->cpu_devices, sizeof(uint64_t)) != sizeof(uint64_t))
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from kvmdump.c:19:
+kvmdump.c: In function 'kvmdump_init':
+kvmdump.h:67:18: note: source object 'cpu_devices' of size 4
+   67 |         uint32_t cpu_devices;
+      |                  ^~~~~~~~~~~
+In file included from defs.h:26,
+                 from kvmdump.c:18:
+/usr/include/unistd.h:378:16: note: in a call to function 'write' declared with attribute 'access (read_only, 2, 3)'
+  378 | extern ssize_t write (int __fd, const void *__buf, size_t __n) __wur
+      |                ^~~~~
+
+Signed-off-by: Kazuhito Hagio <k-hagio-ab@nec.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ kvmdump.c | 2 +-
+ kvmdump.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/kvmdump.c b/kvmdump.c
+index 4db96bd844e9..e515bf0ce9a1 100644
+--- a/kvmdump.c
++++ b/kvmdump.c
+@@ -297,7 +297,7 @@ kvmdump_memory_dump(FILE *ofp)
+ 				(ulonglong)kvm->page_cache[i].paddr);
+ 	}
+ 
+-	fprintf(ofp, "      cpu_devices: %d\n", kvm->cpu_devices);
++	fprintf(ofp, "      cpu_devices: %ld\n", kvm->cpu_devices);
+ 	fprintf(ofp, "           iohole: %llx (%llx - %llx)\n", 
+ 		(ulonglong)kvm->iohole, 0x100000000ULL - kvm->iohole,
+ 		0x100000000ULL);
+diff --git a/kvmdump.h b/kvmdump.h
+index 07e047bb171c..2e408aebef0b 100644
+--- a/kvmdump.h
++++ b/kvmdump.h
+@@ -64,7 +64,7 @@ struct kvmdump_data {
+ 	ulong compresses;
+ 	uint64_t kvbase;
+ 	ulong *debug;
+-	uint32_t cpu_devices;
++	uint64_t cpu_devices;
+ 	struct register_set *registers;
+ 	uint64_t iohole;
+ };
+-- 
+2.37.1
+

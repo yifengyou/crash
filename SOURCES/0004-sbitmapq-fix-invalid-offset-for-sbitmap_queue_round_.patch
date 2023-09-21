@@ -1,0 +1,103 @@
+From 530fe6ad7e4d7ff6254596c1219d25ed929e3867 Mon Sep 17 00:00:00 2001
+From: Lianbo Jiang <lijiang@redhat.com>
+Date: Mon, 23 May 2022 18:04:15 +0800
+Subject: [PATCH 04/18] sbitmapq: fix invalid offset for
+ "sbitmap_queue_round_robin" on Linux v5.13-rc1
+
+Kernel commit efe1f3a1d583 ("scsi: sbitmap: Maintain allocation
+round_robin in sbitmap") moved the round_robin member from struct
+sbitmap_queue to struct sbitmap.  Without the patch, the sbitmapq
+will fail:
+
+  crash> sbitmapq 0xffff8e99d0dc8010
+
+  sbitmapq: invalid structure member offset: sbitmap_queue_round_robin
+          FILE: sbitmap.c  LINE: 378  FUNCTION: sbitmap_queue_context_load()
+
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ defs.h    |  2 ++
+ sbitmap.c | 12 ++++++++++--
+ symbols.c |  2 ++
+ 3 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/defs.h b/defs.h
+index 0aeb98c4f654..ecbced24d2e3 100644
+--- a/defs.h
++++ b/defs.h
+@@ -2169,6 +2169,7 @@ struct offset_table {                    /* stash of commonly-used offsets */
+ 	long sbq_wait_state_wait_cnt;
+ 	long sbq_wait_state_wait;
+ 	long sbitmap_alloc_hint;
++	long sbitmap_round_robin;
+ };
+ 
+ struct size_table {         /* stash of commonly-used sizes */
+@@ -5909,6 +5910,7 @@ struct sbitmap_context {
+ 	unsigned map_nr;
+ 	ulong map_addr;
+ 	ulong alloc_hint;
++	bool round_robin;
+ };
+ 
+ typedef bool (*sbitmap_for_each_fn)(unsigned int idx, void *p);
+diff --git a/sbitmap.c b/sbitmap.c
+index 2921d5447c65..7b318b533702 100644
+--- a/sbitmap.c
++++ b/sbitmap.c
+@@ -352,7 +352,11 @@ static void sbitmap_queue_show(const struct sbitmap_queue_context *sqc,
+ 
+ 	FREEBUF(sbq_wait_state_buf);
+ 
+-	fprintf(fp, "round_robin = %d\n", sqc->round_robin);
++	if (VALID_MEMBER(sbitmap_queue_round_robin))
++		fprintf(fp, "round_robin = %d\n", sqc->round_robin);
++	else if (VALID_MEMBER(sbitmap_round_robin)) /* 5.13 and later */
++		fprintf(fp, "round_robin = %d\n", sc->round_robin);
++
+ 	fprintf(fp, "min_shallow_depth = %u\n", sqc->min_shallow_depth);
+ }
+ 
+@@ -374,7 +378,8 @@ static void sbitmap_queue_context_load(ulong addr, struct sbitmap_queue_context
+ 	sqc->wake_index = INT(sbitmap_queue_buf + OFFSET(sbitmap_queue_wake_index));
+ 	sqc->ws_addr = ULONG(sbitmap_queue_buf + OFFSET(sbitmap_queue_ws));
+ 	sqc->ws_active = INT(sbitmap_queue_buf + OFFSET(sbitmap_queue_ws_active));
+-	sqc->round_robin = BOOL(sbitmap_queue_buf + OFFSET(sbitmap_queue_round_robin));
++	if (VALID_MEMBER(sbitmap_queue_round_robin))
++		sqc->round_robin = BOOL(sbitmap_queue_buf + OFFSET(sbitmap_queue_round_robin));
+ 	sqc->min_shallow_depth = UINT(sbitmap_queue_buf + OFFSET(sbitmap_queue_min_shallow_depth));
+ 
+ 	FREEBUF(sbitmap_queue_buf);
+@@ -396,6 +401,8 @@ void sbitmap_context_load(ulong addr, struct sbitmap_context *sc)
+ 	sc->map_addr = ULONG(sbitmap_buf + OFFSET(sbitmap_map));
+ 	if (VALID_MEMBER(sbitmap_alloc_hint))
+ 		sc->alloc_hint = ULONG(sbitmap_buf + OFFSET(sbitmap_alloc_hint));
++	if (VALID_MEMBER(sbitmap_round_robin))
++		sc->round_robin = BOOL(sbitmap_buf + OFFSET(sbitmap_round_robin));
+ 
+ 	FREEBUF(sbitmap_buf);
+ }
+@@ -522,6 +529,7 @@ void sbitmapq_init(void)
+ 	MEMBER_OFFSET_INIT(sbitmap_map_nr, "sbitmap", "map_nr");
+ 	MEMBER_OFFSET_INIT(sbitmap_map, "sbitmap", "map");
+ 	MEMBER_OFFSET_INIT(sbitmap_alloc_hint, "sbitmap", "alloc_hint");
++	MEMBER_OFFSET_INIT(sbitmap_round_robin, "sbitmap", "round_robin");
+ 
+ 	MEMBER_OFFSET_INIT(sbitmap_queue_sb, "sbitmap_queue", "sb");
+ 	MEMBER_OFFSET_INIT(sbitmap_queue_alloc_hint, "sbitmap_queue", "alloc_hint");
+diff --git a/symbols.c b/symbols.c
+index fd0eb06899f0..5d12a021c769 100644
+--- a/symbols.c
++++ b/symbols.c
+@@ -10710,6 +10710,8 @@ dump_offset_table(char *spec, ulong makestruct)
+ 		OFFSET(sbitmap_map));
+ 	fprintf(fp, "            sbitmap_alloc_hint: %ld\n",
+ 		OFFSET(sbitmap_alloc_hint));
++	fprintf(fp, "           sbitmap_round_robin: %ld\n",
++		OFFSET(sbitmap_round_robin));
+ 	fprintf(fp, "              sbitmap_queue_sb: %ld\n",
+ 		OFFSET(sbitmap_queue_sb));
+ 	fprintf(fp, "      sbitmap_queue_alloc_hint: %ld\n",
+-- 
+2.30.2
+

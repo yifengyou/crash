@@ -1,0 +1,48 @@
+From ec1e61b33a705b8be8d116a541c7b076b0429deb Mon Sep 17 00:00:00 2001
+From: Lianbo Jiang <lijiang@redhat.com>
+Date: Mon, 12 Jun 2023 18:50:05 +0800
+Subject: [PATCH] Fix invalid structure size error during crash startup on
+ ppc64
+
+The crash utility will fail to start session on ppc64 with the following
+error:
+
+  # crash vmlinux vmcore -s
+
+  crash: invalid structure size: note_buf
+         FILE: diskdump.c  LINE: 121  FUNCTION: have_crash_notes()
+
+  [./crash] error trace: 101859ac => 10291798 => 10291450 => 10266038
+
+    10266038: SIZE_verify+156
+    10291450: have_crash_notes+308
+    10291798: map_cpus_to_prstatus_kdump_cmprs+448
+    101859ac: task_init+11980
+
+The reason is that the size of note_buf is not initialized before using
+SIZE(note_buf) in the have_crash_notes() on some architectures including
+ppc64.  Let's initialize it in task_init() to fix this issue.
+
+Fixes: db8c030857b4 ("diskdump/netdump: fix segmentation fault caused by failure of stopping CPUs")
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ task.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/task.c b/task.c
+index 88941c7b0e4d..2b7467b4193d 100644
+--- a/task.c
++++ b/task.c
+@@ -675,6 +675,9 @@ task_init(void)
+ 		tt->this_task = pid_to_task(active_pid);
+ 	}
+ 	else {
++		if (INVALID_SIZE(note_buf))
++			STRUCT_SIZE_INIT(note_buf, "note_buf_t");
++
+ 		if (KDUMP_DUMPFILE())
+ 			map_cpus_to_prstatus();
+ 		else if (ELF_NOTES_VALID() && DISKDUMP_DUMPFILE())
+-- 
+2.37.1
+

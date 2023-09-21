@@ -1,0 +1,86 @@
+From 74fe453f2b5ddf1e1571d006d486cb214817a0ed Mon Sep 17 00:00:00 2001
+From: Lianbo Jiang <lijiang@redhat.com>
+Date: Wed, 9 Nov 2022 14:21:57 +0800
+Subject: [PATCH 28/28] Fix for "ps/vm" commands to display correct %MEM and
+ RSS values
+
+The ps/vm commands may print the bogus value of the %MEM and RSS, the
+reason is that the counter of rss stat is updated in asynchronous manner
+and may become negative, when the SPLIT_RSS_COUNTING is enabled in kernel.
+
+As a result, crash will read it from memory and convert from negative to
+unsigned long integer, eventually it overflows and gets a big integer. For
+example:
+
+  crash> ps 1393
+      PID    PPID  CPU       TASK        ST  %MEM      VSZ      RSS  COMM
+     1393       1  24  ffff9584bb542100  RU  541298032135.9     4132 18014398509481908  enlinuxpc64
+                                             ^^^^^^^^^^^^^^          ^^^^^^^^^^^^^^^^^
+
+This is unexpected, crash needs to correct its value for this case.
+
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ memory.c | 23 ++++++++++++++++++-----
+ 1 file changed, 18 insertions(+), 5 deletions(-)
+
+diff --git a/memory.c b/memory.c
+index ddbf458277f0..2167281b6039 100644
+--- a/memory.c
++++ b/memory.c
+@@ -4714,18 +4714,29 @@ get_task_mem_usage(ulong task, struct task_mem_usage *tm)
+ 		 *  Latest kernels have mm_struct.mm_rss_stat[].
+ 		 */ 
+ 		if (VALID_MEMBER(mm_struct_rss_stat)) {
+-			long anonpages, filepages;
++			long anonpages, filepages, count;
+ 
+ 			anonpages = tt->anonpages;
+ 			filepages = tt->filepages;
+-			rss += LONG(tt->mm_struct +
++			count = LONG(tt->mm_struct +
+ 				OFFSET(mm_struct_rss_stat) +
+ 				OFFSET(mm_rss_stat_count) +
+ 				(filepages * sizeof(long)));
+-			rss += LONG(tt->mm_struct +
++
++			/*
++			 * The counter is updated in asynchronous manner
++			 * and may become negative, see:
++			 * include/linux/mm.h: get_mm_counter()
++			 */
++			if (count > 0)
++				rss += count;
++
++			count = LONG(tt->mm_struct +
+ 				OFFSET(mm_struct_rss_stat) +
+ 				OFFSET(mm_rss_stat_count) +
+ 				(anonpages * sizeof(long)));
++			if (count > 0)
++				rss += count;
+ 		}
+ 
+ 		/* Check whether SPLIT_RSS_COUNTING is enabled */
+@@ -4769,7 +4780,8 @@ get_task_mem_usage(ulong task, struct task_mem_usage *tm)
+ 							RETURN_ON_ERROR))
+ 								continue;
+ 
+-						rss_cache += sync_rss;
++						if (sync_rss > 0)
++							rss_cache += sync_rss;
+ 
+ 						/* count 1 -> anonpages */
+ 						if (!readmem(first->task +
+@@ -4782,7 +4794,8 @@ get_task_mem_usage(ulong task, struct task_mem_usage *tm)
+ 							RETURN_ON_ERROR))
+ 								continue;
+ 
+-						rss_cache += sync_rss;
++						if (sync_rss > 0)
++							rss_cache += sync_rss;
+ 
+ 						if (first == last)
+ 							break;
+-- 
+2.37.1
+

@@ -1,0 +1,66 @@
+From c32abfea658ef33c20a942700277cb52baf95bfa Mon Sep 17 00:00:00 2001
+From: Tao Liu <ltao@redhat.com>
+Date: Thu, 25 Aug 2022 14:39:44 +0800
+Subject: [PATCH 17/28] Fix "task -R" by adding end identifier for union in
+ task_struct
+
+Previously, the start and end identifiers for union are "  {\n" and
+"  }, \n".  However the end identifier is not always as expected.
+"  },\n" can also be the end identifier with gdb-10.2.  As a result,
+variable "randomized" is in incorrect state after union, and fails to
+identify the later struct members.  For example, we can reproduce the
+issue as follows:
+
+    crash> task
+    PID: 847      TASK: ffff94f8038f4000  CPU: 72   COMMAND: "khungtaskd"
+    struct task_struct {
+      thread_info = {
+	flags = 2148024320,
+	status = 0,
+	preempt_lazy_count = 0
+      },
+      {
+	<the union>
+      },
+      ...
+      wake_entry = {
+	next = 0x0
+      },
+      ...
+
+Before patch:
+
+    crash> task -R wake_entry
+    PID: 847      TASK: ffff94f8038f4000  CPU: 72   COMMAND: "khungtaskd"
+
+After patch:
+
+    crash> task -R wake_entry
+    PID: 847      TASK: ffff94f8038f4000  CPU: 72   COMMAND: "khungtaskd"
+      wake_entry = {
+	next = 0x0
+      },
+
+Signed-off-by: Tao Liu <ltao@redhat.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ task.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/task.c b/task.c
+index 071c787fbfa5..db2abc8106a2 100644
+--- a/task.c
++++ b/task.c
+@@ -3436,7 +3436,8 @@ parse_task_thread(int argcnt, char *arglist[], struct task_context *tc) {
+         while (fgets(buf, BUFSIZE, pc->tmpfile)) {
+ 		if (STREQ(buf, "  {\n"))
+ 			randomized = TRUE;
+-		else if (randomized && STREQ(buf, "  }, \n"))
++		else if (randomized &&
++			 (STREQ(buf, "  }, \n") || STREQ(buf, "  },\n")))
+ 			randomized = FALSE;
+ 
+ 		if (strlen(lookfor2)) {
+-- 
+2.37.1
+

@@ -1,0 +1,45 @@
+From 1c918c621e48f53ea69a143aabc59c8366102236 Mon Sep 17 00:00:00 2001
+From: Hari Bathini <hbathini@linux.ibm.com>
+Date: Mon, 4 Jul 2022 10:55:41 +0530
+Subject: [PATCH 03/28] ppc64: fix bt for '-S' case
+
+Passing '-S' option to 'bt' command was intended to specify the stack
+pointer manually. But get_stack_frame() handling on ppc64 is ignoring
+this option altogether. Fix it.
+
+Signed-off-by: Hari Bathini <hbathini@linux.ibm.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ ppc64.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/ppc64.c b/ppc64.c
+index 975caa53b812..0e1d8678eef5 100644
+--- a/ppc64.c
++++ b/ppc64.c
+@@ -2330,6 +2330,22 @@ ppc64_vmcore_stack_frame(struct bt_info *bt_in, ulong *nip, ulong *ksp)
+ 
+ 	pt_regs = (struct ppc64_pt_regs *)bt_in->machdep;
+ 	if (!pt_regs || !pt_regs->gpr[1]) {
++		if (bt_in->hp) {
++			if (bt_in->hp->esp) {
++				*ksp = bt_in->hp->esp;
++				if (!bt_in->hp->eip) {
++					if (IS_KVADDR(*ksp)) {
++						readmem(*ksp+16, KVADDR, &unip, sizeof(ulong),
++							"Regs NIP value", FAULT_ON_ERROR);
++						*nip = unip;
++					}
++				} else
++					*nip = bt_in->hp->eip;
++
++			}
++			return TRUE;
++		}
++
+ 		/*
+ 		 * Not collected regs. May be the corresponding CPU not
+ 		 * responded to an IPI in case of KDump OR f/w has not
+-- 
+2.37.1
+

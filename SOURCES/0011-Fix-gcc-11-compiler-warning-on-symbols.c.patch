@@ -1,0 +1,53 @@
+From 98484914b7f4ba34da0625baa0ed6d449c1fa3ad Mon Sep 17 00:00:00 2001
+From: Kazuhito Hagio <k-hagio-ab@nec.com>
+Date: Fri, 22 Jul 2022 13:44:50 +0900
+Subject: [PATCH 11/28] Fix gcc-11 compiler warning on symbols.c
+
+Without the patch, the following gcc-11 compiler warning is emitted for
+symbols.c:
+
+symbols.c: In function 'cmd_p':
+symbols.c:7412:38: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+ 7412 |                         *(cpuspec-1) = ':';
+      |                         ~~~~~~~~~~~~~^~~~~
+
+Signed-off-by: Kazuhito Hagio <k-hagio-ab@nec.com>
+Signed-off-by: Lianbo Jiang <lijiang@redhat.com>
+---
+ symbols.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/symbols.c b/symbols.c
+index 69004a2e66e3..a94660538492 100644
+--- a/symbols.c
++++ b/symbols.c
+@@ -7363,7 +7363,7 @@ cmd_p(void)
+ 	unsigned radix;
+ 	int do_load_module_filter;
+ 	char buf1[BUFSIZE]; 
+-	char *cpuspec;
++	char *cpuspec, *p;
+ 
+ 	do_load_module_filter = radix = 0;
+ 
+@@ -7398,7 +7398,7 @@ cmd_p(void)
+         if (argerrs || !args[optind])
+                 cmd_usage(pc->curcmd, SYNOPSIS);
+ 
+-	cpuspec = strrchr(args[optind], ':');
++	p = cpuspec = strrchr(args[optind], ':');
+ 	if (cpuspec)
+ 		*cpuspec++ = NULLCHAR;
+ 
+@@ -7421,7 +7421,7 @@ cmd_p(void)
+ 			      sp->name);
+ 		else
+ 			/* maybe a valid C expression (e.g. ':') */
+-			*(cpuspec-1) = ':';
++			*p = ':';
+ 	}
+ 
+ 	process_gdb_output(concat_args(buf1, 0, TRUE), radix,
+-- 
+2.37.1
+
