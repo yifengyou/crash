@@ -21,12 +21,6 @@
     * [ELF符号](docs/基础知识/ELF符号.md)
     * [内核ELF中的percpu变量](docs/基础知识/内核ELF中的percpu变量.md)
     * [进程内存空间](docs/基础知识/进程内存空间.md)
-* [源码分析](docs/源码分析.md)
-    * [kexec系统调用](docs/源码分析/kexec系统调用.md)
-    * [kexec用户态程序](docs/源码分析/kexec用户态程序.md)
-    * [kdump服务](docs/源码分析/kdump服务.md)
-* [crash软件包rpm编译](docs/crash软件包rpm编译.md)
-* [crash潜规则](docs/crash潜规则.md)
 * [crash命令](docs/crash命令.md)
     * [指针(*)](docs/crash命令/指针.md)
     * [extend](docs/crash命令/extend.md)
@@ -78,6 +72,10 @@
     * [ptov](docs/crash命令/ptov.md)
     * [sys](docs/crash命令/sys.md)
     * [q](docs/crash命令/q.md)
+* [源码分析](docs/源码分析.md)
+    * [kexec系统调用](docs/源码分析/kexec系统调用.md)
+    * [kexec用户态程序](docs/源码分析/kexec用户态程序.md)
+    * [kdump服务](docs/源码分析/kdump服务.md)  
 * [crash基本用法](docs/crash基本用法.md)
     * [x86_64虚拟地址空间布局](docs/crash基本用法/x86_64虚拟地址空间布局.md)
     * [获取pfn获取pfn、page和mem_map](docs/crash基本用法/获取pfn_page_mem_map.md)
@@ -98,8 +96,6 @@
     * [内核链表踩踏-前序节点](docs/案例/内核链表踩踏-前序节点.md)
     * [内核链表踩踏-后继节点](docs/案例/内核链表踩踏-后继节点.md)
     * [softlockup-等待状态寄存器](docs/案例/softlockup-等待状态寄存器.md)
-* [Kernel Pwn](docs/kernel_pwn.md)
-    * [babydriver](docs/kernel_pwn/babydriver.md)
 
 
 
