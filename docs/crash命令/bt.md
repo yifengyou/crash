@@ -1,4 +1,659 @@
-# bt
+# bt(backtrace)
+
+## 概述
+
+crash中bt命令是用来显示内核栈回溯的，它可以显示当前上下文的栈，也可以指定进程或任务的栈。
+
+它有很多选项，可以控制输出的格式和内容。
+
+- bt：不带任何参数，显示当前上下文的栈回溯。
+- bt pid：显示指定进程的栈回溯，pid是进程号。
+- bt task：显示指定任务的栈回溯，task是任务结构体的地址。
+- bt -a：显示所有CPU上活动任务的栈回溯，只适用于crash dump文件。
+- bt -g：显示目标任务所在的线程组中所有线程的栈回溯，线程组领导者会先显示。
+- bt -l：显示栈回溯中每个函数的文件名和行号。
+- bt -f：显示每个栈帧中包含的所有数据，这个选项可以用来确定每个函数的参数。
+- bt -F：类似于bt -f，但是会把栈数据符号化，如果栈数据引用了一个slab缓存对象，会显示缓存的名字。
+- bt -e：在栈中搜索可能的内核和用户模式的异常帧。
+- bt -t：从最后一个已知的栈位置到栈顶，显示所有找到的文本符号。（如果栈回溯失败，这个选项有用）
+- bt -R ref：只显示包含指定符号或文本地址引用的栈回溯。
+
+例如：
+
+```shell
+crash> bt
+PID: 0      TASK: ffff88007a4b8000  CPU: 0   COMMAND: "swapper/0"
+ #0 [ffff88007a4b9c40] machine_kexec at ffffffff8103c9fb
+ #1 [ffff88007a4b9ca0] __crash_kexec at ffffffff810c8f32
+ #2 [ffff88007a4b9d70] crash_kexec at ffffffff810c9050
+ #3 [ffff88007a4b9d88] oops_end at ffffffff8163e7e8
+ #4 [ffff88007a4b9db0] die at ffffffff8102dabb
+ #5 [ffff88007a4b9de0] do_general_protection at ffffffff8163e1f5
+ #6 [ffff88007a4b9e10] general_protection at ffffffff8163d8f5
+    [exception RIP: native_write_msr+28]
+    RIP: ffffffff8101f2bc  RSP: ffff88007a4b9ec8  RFLAGS: 00010046
+    RAX: 000000000000009c  RBX: 0000000000000000  RCX: 000000000000009c
+    RDX: 00000000fee00900  RSI: 00000000fee00900  RDI: 000000000000009c
+    RBP: ffff88007a4b9ec8   R8: 00000000fee00800   R9: 00000000fee00800
+    R10: 00000000fee00800  R11: ffff88007a4b9e98  R12: ffff88007a4ba700
+    R13: ffff880079f18000  R14: ffff880079f180c8  R15: ffff880079f180c8
+    ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018
+ #7 [ffff88007a4b9ed0] wrmsr_on_cpu at ffffffff8101f6d6
+ #8 [ffff88007a4b9ef0] wrmsr_on_cpus at ffffffff8101f7d6
+ #9 [ffff88007a4b9f20] mce_cpu_quiet at ffffffff8103ab7e
+#10 [ffff88007a4b9f50] mce_timer_fn at ffffffff8103ac2d
+#11 [ffff88007a4b9f80] __run_hrtimer at ffffffff8107e5d1
+#12 [ffff88007a4b9fe0] hrtimer_interrupt at ffffffff8107e9f2
+#13 [ffff88007a4ba070] local_apic_timer_interrupt at ffffffff8163f9c5
+#14 [ffff88007a4ba090] smp_apic_timer_interrupt at ffffffff8163d6a7
+#15 [ffff88007a4ba0b0] apic_timer_interrupt at ffffffff8163d6bd
+    [exception RIP: intel_idle+124]
+    RIP: ffffffff813f8d1c  RSP: ffff88007a4ba160  RFLAGS: 00000202
+    RAX: 0000000000000001  RBX: 0000000000000000  RCX: 000000000000001f
+    RDX: 00000000fee00900  RSI: ffff88007a4ba700  RDI: 0000000000000000
+    RBP: ffff88007a4ba168   R8: 00000000fee00800   R9: 00000000fee00800
+    R10: 00000000fee00800  R11: ffff88007a4ba198  R12: ffff880079f18000
+    R13: ffff880079f180c8  R14: ffff880079f180c8  R15: ffff880079f180c8
+    ORIG_RAX: ffffffffffffff10  CS: 0010  SS: 0018
+#16 [ffff88007a4ba170] cpuidle_enter_state at ffffffff814b2e5e
+#17 [ffff88007a4ba1d0] cpuidle_idle_call at ffffffff814b30b8
+#18 [ffff88007a4ba220] arch_cpu_idle at ffffffff8101c7b5
+#19 [ffff88007a4ba230] cpu_startup_entry at ffffffff810b9c55
+#20 [ffff88007a4ba270] rest_init at ffffffff8100c200
+#21 [ffff88007a4ba280] start_kernel at ffffffff8163b50f
+#22 [ffff88007a4ba330] x86_64_start_reservations at ffffffff8163a7d5
+#23 [ffff88007a4ba340] x86_64_start_kernel at ffffffff8163a8db
+```
+
+这个例子显示了PID为0的进程（swapper/0）的栈回溯，每一行表示一个栈帧，包括栈帧地址，函数名和函数地址。如果有异常发生，还会显示异常的寄存器值和指令地址。
+
+## 举例子
+
+- bt：不带任何参数，显示当前上下文的栈回溯，这是最简单的用法，可以快速查看当前发生了什么。
+
+```shell
+crash> bt
+PID: 2429976  TASK: ff352c8c1e7fbc80  CPU: 53  COMMAND: "ovs-vswitchd"
+ #0 [ff63810032077b58] machine_kexec at ffffffff90c5ae7e
+ #1 [ff63810032077bb0] __crash_kexec at ffffffff90d5ec51
+ #2 [ff63810032077c70] crash_kexec at ffffffff90d5fafd
+ #3 [ff63810032077c88] oops_end at ffffffff90c22b2f
+ #4 [ff63810032077ca8] no_context at ffffffff90c6a665
+ #5 [ff63810032077d00] __do_page_fault at ffffffff90c6ae28
+ #6 [ff63810032077d70] do_page_fault at ffffffff90c6b271
+ #7 [ff63810032077da0] page_fault at ffffffff9160116e
+    [exception RIP: __x64_sys_pwrite64]
+    RIP: ffffffff90ecd9c0  RSP: ff63810032077e58  RFLAGS: 00010282
+    RAX: ffffffff90ecd9c0  RBX: ff63810032077ee0  RCX: ffffffffc09e3960
+    RDX: ff352c7e7a204000  RSI: 0000000000000000  RDI: ff63810032077f58
+    RBP: ff352c7e4996ba98   R8: 0000000000000000   R9: 0000000000000001
+    R10: 0000000000000001  R11: 0000000000000001  R12: ff63810032077e70
+    R13: ff63810032077e70  R14: 0000000000000000  R15: ff63810032077e70
+    ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018
+ #8 [ff63810032077e58] _MODULE_START_sys_linux at ffffffffc08bbb93 [sys_linux]
+ #9 [ff63810032077ed8] _MODULE_START_sys_linux at ffffffffc08bf811 [sys_linux]
+#10 [ff63810032077f38] do_syscall_64 at ffffffff90c0435b
+#11 [ff63810032077f50] entry_SYSCALL_64_after_hwframe at ffffffff91600088
+    RIP: 00007fbb909eda97  RSP: 00007fbb8c0dcb40  RFLAGS: 00003293
+    RAX: ffffffffffffffda  RBX: 000000000000011a  RCX: 00007fbb909eda97
+    RDX: 00000000000000a6  RSI: 0000555fbab5321b  RDI: 000000000000011a
+    RBP: 0000555fbab5321b   R8: 0000000000000000   R9: 00007fbb8c0e0000
+    R10: 0000000000000000  R11: 0000000000003293  R12: 00000000000000a6
+    R13: 0000000000000000  R14: ffffffffffffffff  R15: 0000555fbac74d28
+    ORIG_RAX: 0000000000000012  CS: 0033  SS: 002b
+crash> 
+```
+
+- bt pid：显示指定进程的栈回溯，pid是进程号，这个用法可以用来查看某个进程的状态和调用路径。
+
+```shell
+crash> bt 1
+PID: 1      TASK: ff352c010ac55ac0  CPU: 37  COMMAND: "systemd"
+ #0 [ff638100001cbd00] __schedule at ffffffff91483b36
+ #1 [ff638100001cbda0] schedule at ffffffff914841c8
+ #2 [ff638100001cbda8] schedule_hrtimeout_range_clock at ffffffff91488a2a
+ #3 [ff638100001cbe30] ep_poll at ffffffff90f1bc6c
+ #4 [ff638100001cbef8] do_epoll_wait at ffffffff90f1be2b
+ #5 [ff638100001cbf30] __x64_sys_epoll_wait at ffffffff90f1be5a
+ #6 [ff638100001cbf38] do_syscall_64 at ffffffff90c0435b
+ #7 [ff638100001cbf50] entry_SYSCALL_64_after_hwframe at ffffffff91600088
+    RIP: 00007f3b4086aa37  RSP: 00007fffbe52f6c0  RFLAGS: 00000293
+    RAX: ffffffffffffffda  RBX: 0000000000000004  RCX: 00007f3b4086aa37
+    RDX: 0000000000000084  RSI: 00007fffbe52f700  RDI: 0000000000000004
+    RBP: 00007fffbe52f700   R8: 0000000000000000   R9: 0000000000000007
+    R10: 00000000ffffffff  R11: 0000000000000293  R12: 0000000000000084
+    R13: 00000000ffffffff  R14: 0000000000000000  R15: 00007fffbe52f700
+    ORIG_RAX: 00000000000000e8  CS: 0033  SS: 002b
+crash> 
+```
+
+- bt task：显示指定任务的栈回溯，task是任务结构体的地址，这个用法可以用来查看某个任务的状态和调用路径，如果知道任务结构体的地址。
+
+```shell
+crash> bt ff352c010ac55ac0
+PID: 1      TASK: ff352c010ac55ac0  CPU: 37  COMMAND: "systemd"
+ #0 [ff638100001cbd00] __schedule at ffffffff91483b36
+ #1 [ff638100001cbda0] schedule at ffffffff914841c8
+ #2 [ff638100001cbda8] schedule_hrtimeout_range_clock at ffffffff91488a2a
+ #3 [ff638100001cbe30] ep_poll at ffffffff90f1bc6c
+ #4 [ff638100001cbef8] do_epoll_wait at ffffffff90f1be2b
+ #5 [ff638100001cbf30] __x64_sys_epoll_wait at ffffffff90f1be5a
+ #6 [ff638100001cbf38] do_syscall_64 at ffffffff90c0435b
+ #7 [ff638100001cbf50] entry_SYSCALL_64_after_hwframe at ffffffff91600088
+    RIP: 00007f3b4086aa37  RSP: 00007fffbe52f6c0  RFLAGS: 00000293
+    RAX: ffffffffffffffda  RBX: 0000000000000004  RCX: 00007f3b4086aa37
+    RDX: 0000000000000084  RSI: 00007fffbe52f700  RDI: 0000000000000004
+    RBP: 00007fffbe52f700   R8: 0000000000000000   R9: 0000000000000007
+    R10: 00000000ffffffff  R11: 0000000000000293  R12: 0000000000000084
+    R13: 00000000ffffffff  R14: 0000000000000000  R15: 00007fffbe52f700
+    ORIG_RAX: 00000000000000e8  CS: 0033  SS: 002b
+crash> 
+```
+
+- bt -a：显示所有CPU上活动任务的栈回溯，只适用于crash dump文件，这个用法可以用来查看系统中所有运行中的任务的状态和调用路径，有助于分析系统的整体情况。
+
+```shell
+crash> bt -a |more
+PID: 0      TASK: ffffffff91e12780  CPU: 0   COMMAND: "swapper/0"
+ #0 [fffffe0000008e50] crash_nmi_callback at ffffffff90c4d8f3
+ #1 [fffffe0000008e58] nmi_handle at ffffffff90c235f3
+ #2 [fffffe0000008eb0] default_do_nmi at ffffffff90c23abe
+ #3 [fffffe0000008ed0] do_nmi at ffffffff90c23ca1
+ #4 [fffffe0000008ef0] end_repeat_nmi at ffffffff9160156b
+    [exception RIP: intel_idle+130]
+    RIP: ffffffff91489612  RSP: ffffffff91e03e50  RFLAGS: 00000046
+    RAX: 0000000000000001  RBX: 0000000000000001  RCX: 0000000000000001
+    RDX: 0000000000000000  RSI: ffffffff91f85d20  RDI: 0000000000000000
+    RBP: 0000000000000002   R8: 0000000000000002   R9: 0000000000022180
+    R10: ffffffff91e03e50  R11: 00000000000003de  R12: 0000000000000002
+    R13: ffffffff91f85df8  R14: 0054a594fc10ca44  R15: 0000000000000516
+    ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018
+--- <NMI exception stack> ---
+ #5 [ffffffff91e03e50] intel_idle at ffffffff91489612
+ #6 [ffffffff91e03e68] cpuidle_enter_state at ffffffff912ba720
+ #7 [ffffffff91e03eb0] do_idle at ffffffff90ceb086
+ #8 [ffffffff91e03ef0] cpu_startup_entry at ffffffff90ceb2cf
+ #9 [ffffffff91e03f10] start_kernel at ffffffff923fe172
+#10 [ffffffff91e03f50] secondary_startup_64 at ffffffff90c000e6
+
+PID: 0      TASK: ff352c010acb8000  CPU: 1   COMMAND: "swapper/1"
+ #0 [fffffe0000034e50] crash_nmi_callback at ffffffff90c4d8f3
+ #1 [fffffe0000034e58] nmi_handle at ffffffff90c235f3
+ #2 [fffffe0000034eb0] default_do_nmi at ffffffff90c23abe
+ #3 [fffffe0000034ed0] do_nmi at ffffffff90c23ca1
+ #4 [fffffe0000034ef0] end_repeat_nmi at ffffffff9160156b
+    [exception RIP: find_next_bit+38]
+    RIP: ffffffff91038346  RSP: ff63810018b87d90  RFLAGS: 00000046
+    RAX: 000000000000020d  RBX: 000000068c2f8b28  RCX: 0000000000000200
+    RDX: 0000000000000000  RSI: 0000000000000008  RDI: ff352c7e7f45aaa8
+    RBP: 000000000000020d   R8: 0000000000000126   R9: ff352c7e7f461788
+    R10: ff63810018b87e70  R11: 000000000000040d  R12: 0000000000000240
+    R13: 000000000000068d  R14: 000000000000000d  R15: 0000000000000008
+    ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018
+--- <NMI exception stack> ---
+```
+
+- bt -g：显示目标任务所在的线程组中所有线程的栈回溯，线程组领导者会先显示，这个用法可以用来查看某个进程或线程组中所有线程的状态和调用路径，有助于分析多线程程序的问题。
+
+```shell
+crash> bt -g |more
+PID: 2937594  TASK: ff352c8d18a11e40  CPU: 51  COMMAND: "ovs-vswitchd"
+ #0 [ff6381003630f9a0] __schedule at ffffffff91483b36
+ #1 [ff6381003630fa40] schedule at ffffffff914841c8
+ #2 [ff6381003630fa48] schedule_hrtimeout_range_clock at ffffffff9148896b
+ #3 [ff6381003630fad0] poll_schedule_timeout.constprop.11 at ffffffff90ee3352
+ #4 [ff6381003630fae8] do_sys_poll at ffffffff90ee42b6
+ #5 [ff6381003630ff08] __x64_sys_poll at ffffffff90ee4e3c
+ #6 [ff6381003630ff38] do_syscall_64 at ffffffff90c0435b
+ #7 [ff6381003630ff50] entry_SYSCALL_64_after_hwframe at ffffffff91600088
+    RIP: 00007fbb909f3849  RSP: 00007ffe66f41620  RFLAGS: 00003293
+    RAX: ffffffffffffffda  RBX: 0000555fbc45b180  RCX: 00007fbb909f3849
+    RDX: 00000000000002c3  RSI: 0000000000000010  RDI: 0000555fbc45b180
+    RBP: 0000000000000010   R8: 0000000000000000   R9: 0000000000000001
+    R10: 00007ffe66f41630  R11: 0000000000003293  R12: 00000000000002c3
+    R13: 000000058c34490f  R14: 00000000bcd7e200  R15: 00007ffe66f41690
+    ORIG_RAX: 0000000000000007  CS: 0033  SS: 002b
+
+PID: 56163  TASK: ff352cfe79929e40  CPU: 33  COMMAND: "vhost_reconn"
+ #0 [ff6381003428bd80] __schedule at ffffffff91483b36
+ #1 [ff6381003428be20] schedule at ffffffff914841c8
+ #2 [ff6381003428be28] do_nanosleep at ffffffff914886e9
+ #3 [ff6381003428be80] hrtimer_nanosleep at ffffffff90d3f5a0
+ #4 [ff6381003428bf10] __x64_sys_nanosleep at ffffffff90d3f840
+ #5 [ff6381003428bf38] do_syscall_64 at ffffffff90c0435b
+ #6 [ff6381003428bf50] entry_SYSCALL_64_after_hwframe at ffffffff91600088
+    RIP: 00007fbb909cbd80  RSP: 00007fb980607fa0  RFLAGS: 00003293
+    RAX: ffffffffffffffda  RBX: 00007fb980607fd0  RCX: 00007fbb909cbd80
+    RDX: 0000000000000000  RSI: 00007fb980607fd0  RDI: 00007fb980607fd0
+    RBP: 00007fb980607fd0   R8: 0000000000000000   R9: 00007fb98060b400
+    R10: 00007fb9806058e0  R11: 0000000000003293  R12: 0000555fb8275560
+    R13: 0000555fb7d839c0  R14: 0000555fb7d83664  R15: 0000000000000000
+    ORIG_RAX: 0000000000000023  CS: 0033  SS: 002b
+```
+
+- bt -l：显示栈回溯中每个函数的文件名和行号，这个用法可以用来查看更详细的代码信息，有助于定位问题发生的位置。
+
+```shell
+crash> bt -l
+PID: 2429976  TASK: ff352c8c1e7fbc80  CPU: 53  COMMAND: "ovs-vswitchd"
+ #0 [ff63810032077b58] machine_kexec at ffffffff90c5ae7e
+    /usr/src/debug/kernel-4.19.90-2102.2.0.0062.el7.x86_64/linux-4.19.90-2102.2.0.0062.el7.x86_64/arch/x86/kernel/machine_kexec_64.c: 433
+ #1 [ff63810032077bb0] __crash_kexec at ffffffff90d5ec51
+    /usr/src/debug/kernel-4.19.90-2102.2.0.0062.el7.x86_64/linux-4.19.90-2102.2.0.0062.el7.x86_64/kernel/kexec_core.c: 1014
+ #2 [ff63810032077c70] crash_kexec at ffffffff90d5fafd
+    /usr/src/debug/kernel-4.19.90-2102.2.0.0062.el7.x86_64/linux-4.19.90-2102.2.0.0062.el7.x86_64/./include/linux/compiler.h: 219
+ #3 [ff63810032077c88] oops_end at ffffffff90c22b2f
+    /usr/src/debug/kernel-4.19.90-2102.2.0.0062.el7.x86_64/linux-4.19.90-2102.2.0.0062.el7.x86_64/arch/x86/kernel/dumpstack.c: 334
+ #4 [ff63810032077ca8] no_context at ffffffff90c6a665
+    /usr/src/debug/kernel-4.19.90-2102.2.0.0062.el7.x86_64/linux-4.19.90-2102.2.0.0062.el7.x86_64/arch/x86/mm/fault.c: 830
+ #5 [ff63810032077d00] __do_page_fault at ffffffff90c6ae28
+    /usr/src/debug/kernel-4.19.90-2102.2.0.0062.el7.x86_64/linux-4.19.90-2102.2.0.0062.el7.x86_64/arch/x86/mm/fault.c: 1345
+ #6 [ff63810032077d70] do_page_fault at ffffffff90c6b271
+    /usr/src/debug/kernel-4.19.90-2102.2.0.0062.el7.x86_64/linux-4.19.90-2102.2.0.0062.el7.x86_64/arch/x86/mm/fault.c: 1487
+ #7 [ff63810032077da0] page_fault at ffffffff9160116e
+    /usr/src/debug/kernel-4.19.90-2102.2.0.0062.el7.x86_64/linux-4.19.90-2102.2.0.0062.el7.x86_64/arch/x86/entry/entry_64.S: 1204
+    [exception RIP: __x64_sys_pwrite64]
+    RIP: ffffffff90ecd9c0  RSP: ff63810032077e58  RFLAGS: 00010282
+    RAX: ffffffff90ecd9c0  RBX: ff63810032077ee0  RCX: ffffffffc09e3960
+    RDX: ff352c7e7a204000  RSI: 0000000000000000  RDI: ff63810032077f58
+    RBP: ff352c7e4996ba98   R8: 0000000000000000   R9: 0000000000000001
+    R10: 0000000000000001  R11: 0000000000000001  R12: ff63810032077e70
+    R13: ff63810032077e70  R14: 0000000000000000  R15: ff63810032077e70
+    ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018
+    /usr/src/debug/kernel-4.19.90-2102.2.0.0062.el7.x86_64/linux-4.19.90-2102.2.0.0062.el7.x86_64/fs/read_write.c: 660
+ #8 [ff63810032077e58] _MODULE_START_sys_linux at ffffffffc08bbb93 [sys_linux]
+ #9 [ff63810032077ed8] _MODULE_START_sys_linux at ffffffffc08bf811 [sys_linux]
+#10 [ff63810032077f38] do_syscall_64 at ffffffff90c0435b
+    /usr/src/debug/kernel-4.19.90-2102.2.0.0062.el7.x86_64/linux-4.19.90-2102.2.0.0062.el7.x86_64/arch/x86/entry/common.c: 293
+#11 [ff63810032077f50] entry_SYSCALL_64_after_hwframe at ffffffff91600088
+    /usr/src/debug/kernel-4.19.90-2102.2.0.0062.el7.x86_64/linux-4.19.90-2102.2.0.0062.el7.x86_64/arch/x86/entry/entry_64.S: 247
+    RIP: 00007fbb909eda97  RSP: 00007fbb8c0dcb40  RFLAGS: 00003293
+    RAX: ffffffffffffffda  RBX: 000000000000011a  RCX: 00007fbb909eda97
+    RDX: 00000000000000a6  RSI: 0000555fbab5321b  RDI: 000000000000011a
+    RBP: 0000555fbab5321b   R8: 0000000000000000   R9: 00007fbb8c0e0000
+    R10: 0000000000000000  R11: 0000000000003293  R12: 00000000000000a6
+    R13: 0000000000000000  R14: ffffffffffffffff  R15: 0000555fbac74d28
+    ORIG_RAX: 0000000000000012  CS: 0033  SS: 002b
+```
+
+- bt -f：显示每个栈帧中包含的所有数据，这个选项可以用来确定每个函数的参数和局部变量，有助于分析函数的执行过程和逻辑。
+
+```shell
+crash> bt -f
+PID: 2429976  TASK: ff352c8c1e7fbc80  CPU: 53  COMMAND: "ovs-vswitchd"
+ #0 [ff63810032077b58] machine_kexec at ffffffff90c5ae7e
+    ff63810032077b60: 0000000000000000 ff352c0000000000 
+    ff63810032077b70: 0000000005003000 ff352c0005003000 
+    ff63810032077b80: 0000000005002000 aa800800000606a6 
+    ff63810032077b90: 7789297e2d5fda00 ff63810032077da8 
+    ff63810032077ba0: 0000000000000009 ff63810032077da8 
+    ff63810032077bb0: ffffffff90d5ec51 
+ #1 [ff63810032077bb0] __crash_kexec at ffffffff90d5ec51
+    ff63810032077bb8: ff63810032077e70 0000000000000000 
+    ff63810032077bc8: ff63810032077e70 ff63810032077e70 
+    ff63810032077bd8: ff352c7e4996ba98 ff63810032077ee0 
+    ff63810032077be8: 0000000000000001 0000000000000001 
+    ff63810032077bf8: 0000000000000001 0000000000000000 
+    ff63810032077c08: ffffffff90ecd9c0 ffffffffc09e3960 
+    ff63810032077c18: ff352c7e7a204000 0000000000000000 
+    ff63810032077c28: ff63810032077f58 ffffffffffffffff 
+    ff63810032077c38: ffffffff90ecd9c0 0000000000000010 
+    ff63810032077c48: 0000000000010282 ff63810032077e58 
+    ff63810032077c58: 0000000000000018 7789297e2d5fda00 
+    ff63810032077c68: ff63810032077da8 ffffffff90d5fafd 
+ #2 [ff63810032077c70] crash_kexec at ffffffff90d5fafd
+    ff63810032077c78: ffffffff00000000 0000000000000046 
+    ff63810032077c88: ffffffff90c22b2f 
+ #3 [ff63810032077c88] oops_end at ffffffff90c22b2f
+    ff63810032077c90: ff63810032077da8 ff9f3fe5110e3bb0 
+    ff63810032077ca0: ff352c8c1e7fbc80 ffffffff90c6a665 
+ #4 [ff63810032077ca8] no_context at ffffffff90c6a665
+    ff63810032077cb0: 0000000000000046 0000000000000000 
+    ff63810032077cc0: 0000000090f3d562 7789297e2d5fda00 
+    ff63810032077cd0: 0000000000000010 ff9f3fe5110e3bb0 
+    ff63810032077ce0: ff63810032077da8 0000000000000000 
+    ff63810032077cf0: ff352cfe63700d80 ff352c8c1e7fbc80 
+    ff63810032077d00: ffffffff90c6ae28 
+ #5 [ff63810032077d00] __do_page_fault at ffffffff90c6ae28
+    ff63810032077d08: ff352cfe63700df8 0000000000000000 
+    ff63810032077d18: 0000000100000002 ffffffff90d51770 
+    ff63810032077d28: 00007fbb90c12020 ff63810032077de0 
+    ff63810032077d38: 7789297e2d5fda00 0000000000000000 
+    ff63810032077d48: ff63810032077da8 0000000000000010 
+    ff63810032077d58: 0000000000000000 0000000000000000 
+    ff63810032077d68: 0000000000000000 ffffffff90c6b271 
+ #6 [ff63810032077d70] do_page_fault at ffffffff90c6b271
+    ff63810032077d78: 0000000000000000 0000000000000000 
+    ff63810032077d88: 0000000000000000 0000000000000000 
+    ff63810032077d98: 0000000000000000 ffffffff9160116e 
+ #7 [ff63810032077da0] page_fault at ffffffff9160116e
+    [exception RIP: __x64_sys_pwrite64]
+    RIP: ffffffff90ecd9c0  RSP: ff63810032077e58  RFLAGS: 00010282
+    RAX: ffffffff90ecd9c0  RBX: ff63810032077ee0  RCX: ffffffffc09e3960
+    RDX: ff352c7e7a204000  RSI: 0000000000000000  RDI: ff63810032077f58
+    RBP: ff352c7e4996ba98   R8: 0000000000000000   R9: 0000000000000001
+    R10: 0000000000000001  R11: 0000000000000001  R12: ff63810032077e70
+    R13: ff63810032077e70  R14: 0000000000000000  R15: ff63810032077e70
+    ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018
+    ff63810032077da8: ff63810032077e70 0000000000000000 
+    ff63810032077db8: ff63810032077e70 ff63810032077e70 
+    ff63810032077dc8: ff352c7e4996ba98 ff63810032077ee0 
+    ff63810032077dd8: 0000000000000001 0000000000000001 
+    ff63810032077de8: 0000000000000001 0000000000000000 
+    ff63810032077df8: ffffffff90ecd9c0 ffffffffc09e3960 
+    ff63810032077e08: ff352c7e7a204000 0000000000000000 
+    ff63810032077e18: ff63810032077f58 ffffffffffffffff 
+    ff63810032077e28: ffffffff90ecd9c0 0000000000000010 
+    ff63810032077e38: 0000000000010282 ff63810032077e58 
+    ff63810032077e48: 0000000000000018 ff63810032077e70 
+    ff63810032077e58: ffffffffc08bbb93 
+ #8 [ff63810032077e58] _MODULE_START_sys_linux at ffffffffc08bbb93 [sys_linux]
+    ff63810032077e60: 00000000000000a6 ffffffff916001b1 
+    ff63810032077e70: ff63810032077e70 ff63810032077e70 
+    ff63810032077e80: ffffffff916001a5 7789297e2d5fda00 
+    ff63810032077e90: 0000000000000000 0000000000000001 
+    ff63810032077ea0: 7789297e2d5fda00 0000000000000012 
+    ff63810032077eb0: ff63810032077f58 0000000000000000 
+    ff63810032077ec0: 0000000000000000 0000000000000000 
+    ff63810032077ed0: 0000000000000000 ffffffffc08bf811 
+ #9 [ff63810032077ed8] _MODULE_START_sys_linux at ffffffffc08bf811 [sys_linux]
+    ff63810032077ee0: 0000001200000001 0000000000000005 
+    ff63810032077ef0: 000000000000011a 0000555fbab5321b 
+    ff63810032077f00: 00000000000000a6 0000000000000000 
+    ff63810032077f10: 0000000000000000 0000000000000000 
+    ff63810032077f20: ff63810032077f58 0000000000000178 
+    ff63810032077f30: 7789297e2d5fda00 ffffffff90c0435b 
+#10 [ff63810032077f38] do_syscall_64 at ffffffff90c0435b
+    ff63810032077f40: 0000000000000000 0000000000000000 
+    ff63810032077f50: ffffffff91600088 
+#11 [ff63810032077f50] entry_SYSCALL_64_after_hwframe at ffffffff91600088
+    RIP: 00007fbb909eda97  RSP: 00007fbb8c0dcb40  RFLAGS: 00003293
+    RAX: ffffffffffffffda  RBX: 000000000000011a  RCX: 00007fbb909eda97
+    RDX: 00000000000000a6  RSI: 0000555fbab5321b  RDI: 000000000000011a
+    RBP: 0000555fbab5321b   R8: 0000000000000000   R9: 00007fbb8c0e0000
+    R10: 0000000000000000  R11: 0000000000003293  R12: 00000000000000a6
+    R13: 0000000000000000  R14: ffffffffffffffff  R15: 0000555fbac74d28
+    ORIG_RAX: 0000000000000012  CS: 0033  SS: 002b
+```
+
+- bt -F：类似于bt -f，但是会把栈数据符号化，如果栈数据引用了一个slab缓存对象，会显示缓存的名字，这个选项可以用来分析内存分配和使用情况。
+
+```shell
+crash> bt -F
+PID: 2429976  TASK: ff352c8c1e7fbc80  CPU: 53  COMMAND: "ovs-vswitchd"
+ #0 [ff63810032077b58] machine_kexec at ffffffff90c5ae7e
+    ff63810032077b60: 0000000000000000 ff352c0000000000 
+    ff63810032077b70: 0000000005003000 ff352c0005003000 
+    ff63810032077b80: 0000000005002000 aa800800000606a6 
+    ff63810032077b90: 7789297e2d5fda00 ff63810032077da8 
+    ff63810032077ba0: 0000000000000009 ff63810032077da8 
+    ff63810032077bb0: __crash_kexec+97 
+ #1 [ff63810032077bb0] __crash_kexec at ffffffff90d5ec51
+    ff63810032077bb8: ff63810032077e70 0000000000000000 
+    ff63810032077bc8: ff63810032077e70 ff63810032077e70 
+    ff63810032077bd8: ff352c7e4996ba98 ff63810032077ee0 
+    ff63810032077be8: 0000000000000001 0000000000000001 
+    ff63810032077bf8: 0000000000000001 0000000000000000 
+    ff63810032077c08: __x64_sys_pwrite64 sys_ops+704      
+    ff63810032077c18: [kmalloc-8192]   0000000000000000 
+    ff63810032077c28: ff63810032077f58 ffffffffffffffff 
+    ff63810032077c38: __x64_sys_pwrite64 0000000000000010 
+    ff63810032077c48: 0000000000010282 ff63810032077e58 
+    ff63810032077c58: 0000000000000018 7789297e2d5fda00 
+    ff63810032077c68: ff63810032077da8 crash_kexec+61   
+ #2 [ff63810032077c70] crash_kexec at ffffffff90d5fafd
+    ff63810032077c78: ffffffff00000000 0000000000000046 
+    ff63810032077c88: oops_end+175     
+ #3 [ff63810032077c88] oops_end at ffffffff90c22b2f
+    ff63810032077c90: ff63810032077da8 ff9f3fe5110e3bb0 
+    ff63810032077ca0: [task_struct]    no_context+453   
+ #4 [ff63810032077ca8] no_context at ffffffff90c6a665
+    ff63810032077cb0: 0000000000000046 0000000000000000 
+    ff63810032077cc0: 0000000090f3d562 7789297e2d5fda00 
+    ff63810032077cd0: 0000000000000010 ff9f3fe5110e3bb0 
+    ff63810032077ce0: ff63810032077da8 0000000000000000 
+    ff63810032077cf0: [mm_struct]      [task_struct]    
+    ff63810032077d00: __do_page_fault+200 
+ #5 [ff63810032077d00] __do_page_fault at ffffffff90c6ae28
+    ff63810032077d08: [mm_struct]      0000000000000000 
+    ff63810032077d18: 0000000100000002 futex_wait+208   
+    ff63810032077d28: 00007fbb90c12020 ff63810032077de0 
+    ff63810032077d38: 7789297e2d5fda00 0000000000000000 
+    ff63810032077d48: ff63810032077da8 0000000000000010 
+    ff63810032077d58: 0000000000000000 0000000000000000 
+    ff63810032077d68: 0000000000000000 do_page_fault+49 
+ #6 [ff63810032077d70] do_page_fault at ffffffff90c6b271
+    ff63810032077d78: 0000000000000000 0000000000000000 
+    ff63810032077d88: 0000000000000000 0000000000000000 
+    ff63810032077d98: 0000000000000000 page_fault+30    
+ #7 [ff63810032077da0] page_fault at ffffffff9160116e
+    [exception RIP: __x64_sys_pwrite64]
+    RIP: ffffffff90ecd9c0  RSP: ff63810032077e58  RFLAGS: 00010282
+    RAX: ffffffff90ecd9c0  RBX: ff63810032077ee0  RCX: ffffffffc09e3960
+    RDX: ff352c7e7a204000  RSI: 0000000000000000  RDI: ff63810032077f58
+    RBP: ff352c7e4996ba98   R8: 0000000000000000   R9: 0000000000000001
+    R10: 0000000000000001  R11: 0000000000000001  R12: ff63810032077e70
+    R13: ff63810032077e70  R14: 0000000000000000  R15: ff63810032077e70
+    ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018
+    ff63810032077da8: ff63810032077e70 0000000000000000 
+    ff63810032077db8: ff63810032077e70 ff63810032077e70 
+    ff63810032077dc8: ff352c7e4996ba98 ff63810032077ee0 
+    ff63810032077dd8: 0000000000000001 0000000000000001 
+    ff63810032077de8: 0000000000000001 0000000000000000 
+    ff63810032077df8: __x64_sys_pwrite64 sys_ops+704      
+    ff63810032077e08: [kmalloc-8192]   0000000000000000 
+    ff63810032077e18: ff63810032077f58 ffffffffffffffff 
+    ff63810032077e28: __x64_sys_pwrite64 0000000000000010 
+    ff63810032077e38: 0000000000010282 ff63810032077e58 
+    ff63810032077e48: 0000000000000018 ff63810032077e70 
+    ff63810032077e58: sys_linux+7059 
+ #8 [ff63810032077e58] _MODULE_START_sys_linux at ffffffffc08bbb93 [sys_linux]
+    ff63810032077e60: 00000000000000a6 __switch_to_asm+65 
+    ff63810032077e70: ff63810032077e70 ff63810032077e70 
+    ff63810032077e80: __switch_to_asm+53 7789297e2d5fda00 
+    ff63810032077e90: 0000000000000000 0000000000000001 
+    ff63810032077ea0: 7789297e2d5fda00 0000000000000012 
+    ff63810032077eb0: ff63810032077f58 0000000000000000 
+    ff63810032077ec0: 0000000000000000 0000000000000000 
+    ff63810032077ed0: 0000000000000000 sys_linux+22545 
+ #9 [ff63810032077ed8] _MODULE_START_sys_linux at ffffffffc08bf811 [sys_linux]
+    ff63810032077ee0: 0000001200000001 0000000000000005 
+    ff63810032077ef0: 000000000000011a 0000555fbab5321b 
+    ff63810032077f00: 00000000000000a6 0000000000000000 
+    ff63810032077f10: 0000000000000000 0000000000000000 
+    ff63810032077f20: ff63810032077f58 0000000000000178 
+    ff63810032077f30: 7789297e2d5fda00 do_syscall_64+91 
+#10 [ff63810032077f38] do_syscall_64 at ffffffff90c0435b
+    ff63810032077f40: 0000000000000000 0000000000000000 
+    ff63810032077f50: entry_SYSCALL_64_after_hwframe+68 
+#11 [ff63810032077f50] entry_SYSCALL_64_after_hwframe at ffffffff91600088
+    RIP: 00007fbb909eda97  RSP: 00007fbb8c0dcb40  RFLAGS: 00003293
+    RAX: ffffffffffffffda  RBX: 000000000000011a  RCX: 00007fbb909eda97
+    RDX: 00000000000000a6  RSI: 0000555fbab5321b  RDI: 000000000000011a
+    RBP: 0000555fbab5321b   R8: 0000000000000000   R9: 00007fbb8c0e0000
+    R10: 0000000000000000  R11: 0000000000003293  R12: 00000000000000a6
+    R13: 0000000000000000  R14: ffffffffffffffff  R15: 0000555fbac74d28
+    ORIG_RAX: 0000000000000012  CS: 0033  SS: 002b
+```
+
+- bt -e：在栈中搜索可能的内核和用户模式的异常帧，这个选项可以用来分析异常发生时的上下文和原因。
+
+```shell
+crash> bt -e
+PID: 2429976  TASK: ff352c8c1e7fbc80  CPU: 53  COMMAND: "ovs-vswitchd"
+
+  KERNEL-MODE EXCEPTION FRAME AT: ff63810032077bb8
+    [exception RIP: __x64_sys_pwrite64]
+    RIP: ffffffff90ecd9c0  RSP: ff63810032077e58  RFLAGS: 00010282
+    RAX: ffffffff90ecd9c0  RBX: ff63810032077ee0  RCX: ffffffffc09e3960
+    RDX: ff352c7e7a204000  RSI: 0000000000000000  RDI: ff63810032077f58
+    RBP: ff352c7e4996ba98   R8: 0000000000000000   R9: 0000000000000001
+    R10: 0000000000000001  R11: 0000000000000001  R12: ff63810032077e70
+    R13: ff63810032077e70  R14: 0000000000000000  R15: ff63810032077e70
+    ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018
+
+  KERNEL-MODE EXCEPTION FRAME AT: ff63810032077da8
+    [exception RIP: __x64_sys_pwrite64]
+    RIP: ffffffff90ecd9c0  RSP: ff63810032077e58  RFLAGS: 00010282
+    RAX: ffffffff90ecd9c0  RBX: ff63810032077ee0  RCX: ffffffffc09e3960
+    RDX: ff352c7e7a204000  RSI: 0000000000000000  RDI: ff63810032077f58
+    RBP: ff352c7e4996ba98   R8: 0000000000000000   R9: 0000000000000001
+    R10: 0000000000000001  R11: 0000000000000001  R12: ff63810032077e70
+    R13: ff63810032077e70  R14: 0000000000000000  R15: ff63810032077e70
+    ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018
+
+  USER-MODE EXCEPTION FRAME AT: ff63810032077f58
+    RIP: 00007fbb909eda97  RSP: 00007fbb8c0dcb40  RFLAGS: 00003293
+    RAX: ffffffffffffffda  RBX: 000000000000011a  RCX: 00007fbb909eda97
+    RDX: 00000000000000a6  RSI: 0000555fbab5321b  RDI: 000000000000011a
+    RBP: 0000555fbab5321b   R8: 0000000000000000   R9: 00007fbb8c0e0000
+    R10: 0000000000000000  R11: 0000000000003293  R12: 00000000000000a6
+    R13: 0000000000000000  R14: ffffffffffffffff  R15: 0000555fbac74d28
+    ORIG_RAX: 0000000000000012  CS: 0033  SS: 002b
+```
+
+- bt -t：从最后一个已知的栈位置到栈顶，显示所有找到的文本符号。（如果栈回溯失败，这个选项有用）
+
+```shell
+crash> bt -t
+PID: 2429976  TASK: ff352c8c1e7fbc80  CPU: 53  COMMAND: "ovs-vswitchd"
+              START: machine_kexec at ffffffff90c5ae7e
+  [ff63810032077b58] machine_kexec at ffffffff90c5ae7e
+  [ff63810032077bb0] __crash_kexec at ffffffff90d5ec51
+  [ff63810032077c08] __x64_sys_pwrite64 at ffffffff90ecd9c0
+  [ff63810032077c38] __x64_sys_pwrite64 at ffffffff90ecd9c0
+  [ff63810032077c70] crash_kexec at ffffffff90d5fafd
+  [ff63810032077c88] oops_end at ffffffff90c22b2f
+  [ff63810032077ca8] no_context at ffffffff90c6a665
+  [ff63810032077d00] __do_page_fault at ffffffff90c6ae28
+  [ff63810032077d20] futex_wait at ffffffff90d51770
+  [ff63810032077d70] do_page_fault at ffffffff90c6b271
+  [ff63810032077da0] page_fault at ffffffff9160116e
+  [ff63810032077df8] __x64_sys_pwrite64 at ffffffff90ecd9c0
+  [ff63810032077e28] __x64_sys_pwrite64 at ffffffff90ecd9c0
+  [ff63810032077e58] _MODULE_START_sys_linux at ffffffffc08bbb93 [sys_linux]
+  [ff63810032077e68] __switch_to_asm at ffffffff916001b1
+  [ff63810032077e80] __switch_to_asm at ffffffff916001a5
+  [ff63810032077ed8] _MODULE_START_sys_linux at ffffffffc08bf811 [sys_linux]
+  [ff63810032077f38] do_syscall_64 at ffffffff90c0435b
+  [ff63810032077f50] entry_SYSCALL_64_after_hwframe at ffffffff91600088
+    RIP: 00007fbb909eda97  RSP: 00007fbb8c0dcb40  RFLAGS: 00003293
+    RAX: ffffffffffffffda  RBX: 000000000000011a  RCX: 00007fbb909eda97
+    RDX: 00000000000000a6  RSI: 0000555fbab5321b  RDI: 000000000000011a
+    RBP: 0000555fbab5321b   R8: 0000000000000000   R9: 00007fbb8c0e0000
+    R10: 0000000000000000  R11: 0000000000003293  R12: 00000000000000a6
+    R13: 0000000000000000  R14: ffffffffffffffff  R15: 0000555fbac74d28
+    ORIG_RAX: 0000000000000012  CS: 0033  SS: 002b
+```
+
+- bt -R ref：只显示包含指定符号或文本地址引用的栈回溯，这个选项可以用来过滤出相关联或感兴趣的栈回溯。
+
+```shell
+crash> bt -R oops_end
+PID: 2429976  TASK: ff352c8c1e7fbc80  CPU: 53  COMMAND: "ovs-vswitchd"
+ #0 [ff63810032077b58] machine_kexec at ffffffff90c5ae7e
+ #1 [ff63810032077bb0] __crash_kexec at ffffffff90d5ec51
+ #2 [ff63810032077c70] crash_kexec at ffffffff90d5fafd
+ #3 [ff63810032077c88] oops_end at ffffffff90c22b2f
+ #4 [ff63810032077ca8] no_context at ffffffff90c6a665
+ #5 [ff63810032077d00] __do_page_fault at ffffffff90c6ae28
+ #6 [ff63810032077d70] do_page_fault at ffffffff90c6b271
+ #7 [ff63810032077da0] page_fault at ffffffff9160116e
+    [exception RIP: __x64_sys_pwrite64]
+    RIP: ffffffff90ecd9c0  RSP: ff63810032077e58  RFLAGS: 00010282
+    RAX: ffffffff90ecd9c0  RBX: ff63810032077ee0  RCX: ffffffffc09e3960
+    RDX: ff352c7e7a204000  RSI: 0000000000000000  RDI: ff63810032077f58
+    RBP: ff352c7e4996ba98   R8: 0000000000000000   R9: 0000000000000001
+    R10: 0000000000000001  R11: 0000000000000001  R12: ff63810032077e70
+    R13: ff63810032077e70  R14: 0000000000000000  R15: ff63810032077e70
+    ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018
+ #8 [ff63810032077e58] _MODULE_START_sys_linux at ffffffffc08bbb93 [sys_linux]
+ #9 [ff63810032077ed8] _MODULE_START_sys_linux at ffffffffc08bf811 [sys_linux]
+#10 [ff63810032077f38] do_syscall_64 at ffffffff90c0435b
+#11 [ff63810032077f50] entry_SYSCALL_64_after_hwframe at ffffffff91600088
+    RIP: 00007fbb909eda97  RSP: 00007fbb8c0dcb40  RFLAGS: 00003293
+    RAX: ffffffffffffffda  RBX: 000000000000011a  RCX: 00007fbb909eda97
+    RDX: 00000000000000a6  RSI: 0000555fbab5321b  RDI: 000000000000011a
+    RBP: 0000555fbab5321b   R8: 0000000000000000   R9: 00007fbb8c0e0000
+    R10: 0000000000000000  R11: 0000000000003293  R12: 00000000000000a6
+    R13: 0000000000000000  R14: ffffffffffffffff  R15: 0000555fbac74d28
+    ORIG_RAX: 0000000000000012  CS: 0033  SS: 002b
+```
+
+- 只显示奔溃的堆栈
+
+```shell
+crash> bt -p
+PID: 2429976  TASK: ff352c8c1e7fbc80  CPU: 53  COMMAND: "ovs-vswitchd"
+ #0 [ff63810032077b58] machine_kexec at ffffffff90c5ae7e
+ #1 [ff63810032077bb0] __crash_kexec at ffffffff90d5ec51
+ #2 [ff63810032077c70] crash_kexec at ffffffff90d5fafd
+ #3 [ff63810032077c88] oops_end at ffffffff90c22b2f
+ #4 [ff63810032077ca8] no_context at ffffffff90c6a665
+ #5 [ff63810032077d00] __do_page_fault at ffffffff90c6ae28
+ #6 [ff63810032077d70] do_page_fault at ffffffff90c6b271
+ #7 [ff63810032077da0] page_fault at ffffffff9160116e
+    [exception RIP: __x64_sys_pwrite64]
+    RIP: ffffffff90ecd9c0  RSP: ff63810032077e58  RFLAGS: 00010282
+    RAX: ffffffff90ecd9c0  RBX: ff63810032077ee0  RCX: ffffffffc09e3960
+    RDX: ff352c7e7a204000  RSI: 0000000000000000  RDI: ff63810032077f58
+    RBP: ff352c7e4996ba98   R8: 0000000000000000   R9: 0000000000000001
+    R10: 0000000000000001  R11: 0000000000000001  R12: ff63810032077e70
+    R13: ff63810032077e70  R14: 0000000000000000  R15: ff63810032077e70
+    ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018
+ #8 [ff63810032077e58] _MODULE_START_sys_linux at ffffffffc08bbb93 [sys_linux]
+ #9 [ff63810032077ed8] _MODULE_START_sys_linux at ffffffffc08bf811 [sys_linux]
+#10 [ff63810032077f38] do_syscall_64 at ffffffff90c0435b
+#11 [ff63810032077f50] entry_SYSCALL_64_after_hwframe at ffffffff91600088
+    RIP: 00007fbb909eda97  RSP: 00007fbb8c0dcb40  RFLAGS: 00003293
+    RAX: ffffffffffffffda  RBX: 000000000000011a  RCX: 00007fbb909eda97
+    RDX: 00000000000000a6  RSI: 0000555fbab5321b  RDI: 000000000000011a
+    RBP: 0000555fbab5321b   R8: 0000000000000000   R9: 00007fbb8c0e0000
+    R10: 0000000000000000  R11: 0000000000003293  R12: 00000000000000a6
+    R13: 0000000000000000  R14: ffffffffffffffff  R15: 0000555fbac74d28
+    ORIG_RAX: 0000000000000012  CS: 0033  SS: 002b
+```
+
+- 只显示裸堆栈数据
+
+```shell
+crash> bt -r
+PID: 2429976  TASK: ff352c8c1e7fbc80  CPU: 53  COMMAND: "ovs-vswitchd"
+ff63810032074000:  0000000057ac6e9d 0000000000000000 
+...
+ff63810032077ec0:  0000000000000000 0000000000000000 
+ff63810032077ed0:  0000000000000000 sys_linux+22545 
+ff63810032077ee0:  0000001200000001 0000000000000005 
+ff63810032077ef0:  000000000000011a 0000555fbab5321b 
+ff63810032077f00:  00000000000000a6 0000000000000000 
+ff63810032077f10:  0000000000000000 0000000000000000 
+ff63810032077f20:  ff63810032077f58 0000000000000178 
+ff63810032077f30:  7789297e2d5fda00 do_syscall_64+91 
+ff63810032077f40:  0000000000000000 0000000000000000 
+ff63810032077f50:  entry_SYSCALL_64_after_hwframe+68 0000555fbac74d28 
+ff63810032077f60:  ffffffffffffffff 0000000000000000 
+ff63810032077f70:  00000000000000a6 0000555fbab5321b 
+ff63810032077f80:  000000000000011a 0000000000003293 
+ff63810032077f90:  0000000000000000 00007fbb8c0e0000 
+ff63810032077fa0:  0000000000000000 ffffffffffffffda 
+ff63810032077fb0:  00007fbb909eda97 00000000000000a6 
+ff63810032077fc0:  0000555fbab5321b 000000000000011a 
+ff63810032077fd0:  0000000000000012 00007fbb909eda97 
+ff63810032077fe0:  0000000000000033 0000000000003293 
+ff63810032077ff0:  00007fbb8c0dcb40 000000000000002b 
+```
+
+- 检查是否有栈溢出
+
+```shell
+crash> bt -v
+No stack overflows detected
+crash>
+````
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/bt.html>
 
 ```
 crash> help bt

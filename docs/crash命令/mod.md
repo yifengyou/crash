@@ -1,4 +1,83 @@
-# mod
+# mod(module information and loading of symbols and debugging data)
+
+## 概述
+
+mod命令是crash工具中的一个命令，它用于显示或设置模块的符号和调试数据。
+
+模块是Linux内核的可加载组件，它可以在运行时动态地加载或卸载，以增加或减少内核的功能。
+
+模块的符号和调试数据是模块的对象文件中包含的信息，它可以帮助分析模块的代码逻辑和运行状态。
+
+mod命令有以下几种用法：
+
+- mod：显示当前系统已加载的模块的基本信息，包括模块地址，名称，大小，对象文件名（如果已知），以及是否使用了CONFIG_KALLSYMS编译选项。
+- mod -s module [objfile]：从对象文件中加载指定模块的符号和调试数据。如果没有指定objfile参数，则会在主机系统的`/lib/modules/<release>`
+  目录或内核符号表文件所在的目录中搜索以.o或.ko为后缀的对象文件。如果指定了objfile参数，则会使用该文件。
+- mod -d module：删除指定模块的符号和调试数据。
+- mod -S [directory]：从对象文件中加载所有已加载模块的符号和调试数据。对于每个模块，会在主机系统的`/lib/modules/<release>`目录或内核符号表文件所在的目录中搜索以.o或.ko为后缀的对象文件。
+
+## 举例子
+
+- 列出脏内核的模块
+
+```shell
+crash> mod -t
+NAME            TAINTS
+mlxfw           OE
+rdma_ucm        OE
+ib_umad         OE
+iw_cm           OE
+mlx_compat      OE
+ib_cm           OE
+mlx5_core       OE
+ib_ipoib        OE
+rdma_cm         OE
+syshook_linux   OE
+secmodel_linux  OE
+resguard_linux  OE
+ib_core         OE
+ib_uverbs       OE
+mlx5_ib         OE
+```
+
+- 查看当前系统已加载的模块信息：
+
+```
+crash> mod
+MODULE NAME    SIZE  OBJECT FILE
+ext4           585728 /lib/modules/4.19.53/kernel/fs/ext4/ext4.ko
+mbcache        16384 /lib/modules/4.19.53/kernel/fs/mbcache.ko
+jbd2           106496 /lib/modules/4.19.53/kernel/fs/jbd2/jbd2.ko
+...
+```
+
+- 加载ext4模块的符号和调试数据：
+
+```
+crash> mod -s ext4
+ext4: module loaded: /lib/modules/4.19.53/kernel/fs/ext4/ext4.ko
+```
+
+- 删除ext4模块的符号和调试数据：
+
+```
+crash> mod -d ext4
+ext4: module deleted: /lib/modules/4.19.53/kernel/fs/ext4/ext4.ko
+```
+
+- 加载所有已加载模块的符号和调试数据：
+
+```
+crash> mod -S
+ext4: module loaded: /lib/modules/4.19.53/kernel/fs/ext4/ext4.ko
+mbcache: module loaded: /lib/modules/4.19.53/kernel/fs/mbcache.ko
+jbd2: module loaded: /lib/modules/4.19.53/kernel/fs/jbd2/jbd2.ko
+...
+```
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/mod.html>
 
 ```
 NAME
@@ -176,7 +255,5 @@ EXAMPLES
     vxodm     P(U)
 
 ```
-
-
 
 ---

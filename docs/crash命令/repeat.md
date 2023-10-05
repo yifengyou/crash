@@ -1,4 +1,27 @@
-# repeat
+# repeat(repeat a command)
+
+## 概述
+
+repeat命令是crash工具中的一个命令，它用于重复执行上一条命令或指定的命令。repeat命令可以帮助简化重复的操作，节省输入时间，提高效率。
+
+```shell
+  repeat [-seconds] command
+```
+
+## 举例子
+
+- 每隔一秒执行一次命令：
+
+```
+crash> repeat -1 p jiffies
+jiffies = $10 = 28121729817
+jiffies = $11 = 28121729817
+...
+```
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/repeat.html>
 
 ```
 NAME
@@ -43,7 +66,5 @@ EXAMPLES
     ...
 
 ```
-
-
 
 ---

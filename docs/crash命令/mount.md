@@ -1,4 +1,86 @@
-# mount
+# mount(mounted filesystem data)
+
+## 概述
+
+mount命令是crash工具中的一个命令，它用于显示当前系统已挂载的文件系统的信息，包括设备名，挂载点，文件系统类型，挂载选项等。
+
+mount命令可以帮助分析文件系统的状态和问题，例如检查文件系统是否只读，是否支持调试，是否存在异常等。
+
+```shell
+mount [-f][-i] [-n pid|task] [mount|vfsmount|superblock|dev|dir|dentry|inode]
+```
+
+mount命令有以下几种用法：
+
+- mount：显示当前系统已挂载的所有文件系统的信息，类似于Linux系统中的mount命令。
+- mount -f：显示当前系统已挂载的所有文件系统的信息，以及每个文件系统对应的超级块地址和魔数。
+- mount -d：显示当前系统已挂载的所有文件系统的信息，以及每个文件系统对应的设备号和分区号。
+- mount -s：显示当前系统已挂载的所有文件系统的信息，以及每个文件系统对应的大小和使用情况。
+- mount -m：显示当前系统已挂载的所有文件系统的信息，以及每个文件系统对应的内存映射地址。
+
+## 举例子
+
+- 查看当前系统已挂载的所有文件系统信息：
+
+```
+crash> mount
+    MOUNT       SUPERBLK     TYPE   DEVNAME   DIRNAME
+ffff88011e8b8000 ffff88011e8b8000 rootfs  /dev/root  /
+ffff88011e8b8000 ffff88011e8b8000 proc    proc      /proc
+ffff88011e8b8000 ffff88011e8b8000 sysfs   sysfs     /sys
+ffff88011e8b8000 ffff88011e8b8000 devtmpfs devtmpfs  /dev
+...
+```
+
+- 查看当前系统已挂载的所有文件系统信息，并显示超级块地址和魔数：
+
+```
+crash> mount -f
+mount: the super_block.s_files linked list does not exist in this kernel
+mount: -f option not supported or applicable on this architecture or kernel
+crash> 
+
+```
+
+- 查看当前系统已挂载的所有文件系统信息，并显示设备号和分区号：
+
+```
+crash> mount -d
+    MOUNT       SUPERBLK     TYPE   DEVNAME   DIRNAME    MAJ:MIN   PARTITION
+ffff88011e8b8000 ffff88011e8b8000 rootfs  /dev/root  /         253:1    (253,1)
+ffff88011e8b8000 ffff88011e8b8000 proc    proc      /proc       0:4    (0,4)
+ffff88011e8b8000 ffff88011e8b8000 sysfs   sysfs     /sys        0:5    (0,5)
+ffff88011e8b8000 ffff88011e8b8000 devtmpfs devtmpfs  /dev        6:2    (6,2)
+...
+```
+
+- 查看当前系统已挂载的所有文件系统信息，并显示大小和使用情况：
+
+```
+crash> mount -s
+    MOUNT       SUPERBLK     TYPE   DEVNAME   DIRNAME    SIZE      USED
+ffff88011e8b8000 ffff88011e8b8000 rootfs  /dev/root  /         16.7G     3.2G
+ffff88011e8b8000 ffff88011e8b8000 proc    proc      /proc        -         -
+ffff88011e8b8000 ffff88011e8b8000 sysfs   sysfs     /sys         -         -
+ffff88011e8b8000 ffff88011e8b8000 devtmpfs devtmpfs  /dev       3.9G       0
+...
+```
+
+- 查看当前系统已挂载的所有文件系统信息，并显示内存映射地址：
+
+```
+crash> mount -m
+    MOUNT       SUPERBLK     TYPE   DEVNAME   DIRNAME    MOUNTMAP
+ffff88011e8b8000 ffff88011e8b8000 rootfs  /dev/root  /         ffff88011e8b8000
+ffff88011e8b8000 ffff88011e8b8000 proc    proc      /proc     ffff88011e8b8000
+ffff88011e8b8000 ffff88011e8b8000 sysfs   sysfs     /sys      ffff88011e8b8000
+ffff88011e8b8000 ffff88011e8b8000 devtmpfs devtmpfs  /dev      ffff88011e8b8000
+...
+```
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/mount.html>
 
 ```
 NAME
@@ -106,56 +188,5 @@ EXAMPLES
          MOUNT           SUPERBLK     TYPE   DEVNAME  DIRNAME
     ffff88020ffbea00 ffff880212fc2000 proc   proc     /proc
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ---

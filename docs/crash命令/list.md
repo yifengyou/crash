@@ -1,4 +1,62 @@
-# list
+# list(linked list)
+
+## 概述
+
+crash工具中，list命令是用于遍历和显示内核中的链表结构的命令。list命令有以下作用：
+
+- 可以根据链表头的地址，遍历链表中的所有节点，并显示节点的地址。
+- 可以根据链表节点中嵌入的list_head结构体的偏移量，定位到节点所属的结构体，并显示结构体的地址或者成员。
+- 可以根据链表头或者节点所属的结构体类型，自动识别链表节点中嵌入的list_head结构体的偏移量，简化输入参数。
+- 可以指定遍历链表的方向，正向或者反向。
+- 可以指定遍历链表的终止条件，比如遍历到某个地址或者某个值。
+- 可以指定显示链表节点的格式，比如十六进制或者十进制。
+
+## 举例子
+
+- 解析文件系统链表信息
+
+```shell
+crash> list file_system_type.next -s file_system_type.name,fs_flags 0xffffffff91f66b80
+ffffffff91f66b80
+  name = 0xffffffff91cdb6cd "sysfs"
+  fs_flags = 8
+ffffffff91e12700
+  name = 0xffffffff91cae469 "rootfs"
+  fs_flags = 0
+ffffffff91f67280
+  name = 0xffffffff91c6f9df "ramfs"
+  fs_flags = 8
+ffffffff91f53720
+  name = 0xffffffff91cae9b3 "bdev"
+  fs_flags = 0
+ffffffff91f66800
+  name = 0xffffffff91c9c8d6 "proc"
+  fs_flags = 8
+ffffffff91f0dd40
+  name = 0xffffffff91ca735e "cpuset"
+  fs_flags = 0
+ffffffff91f09460
+  name = 0xffffffff91ccd15b "cgroup"
+  fs_flags = 8
+ffffffff91f09760
+  name = 0xffffffff91c960b4 "cgroup2"
+  fs_flags = 8
+ffffffff91f29ee0
+  name = 0xffffffff91cf824f "tmpfs"
+  fs_flags = 8
+```
+
+- `list -H head`：显示以head为头节点的链表中所有节点的地址，不包括头节点自身。head可以是一个list_head结构体的地址，也可以是一个包含list_head结构体成员的结构体类型或者地址。
+- `list -h node`：显示以node为头节点的链表中所有节点的地址，包括头节点自身。node可以是一个list_head结构体的地址，也可以是一个包含list_head结构体成员的结构体类型或者地址。
+- `list -o offset [-s struct[.member[,member]]] start`：显示以start为起始节点的链表中所有节点所属的结构体的地址或者成员。offset是一个数字或者一个形如struct.member的字符串，表示list_head结构体在结构体中的偏移量。struct是一个结构体类型，member是一个或多个结构体成员，用逗号分隔。如果省略struct和member，则只显示结构体地址。
+- `list -r [-e end] start`：反向遍历以start为起始节点的链表，显示所有节点的地址。end是一个可选参数，表示遍历到该地址时停止。
+- `list -x [-e value] start`：遍历以start为起始节点的链表，显示所有节点中存储的值。value是一个可选参数，表示遍历到该值时停止。
+
+
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/list.html>
 
 ```
 NAME
@@ -447,65 +505,5 @@ EXAMPLES
     }
     crash> list -o dentry.d_child -s dentry.d_name.name -H ffff9c585b81a220
 ```
-
-
-
-
-
-## 遍历文件系统
-
-```
-crash> list file_system_type.next -s file_system_type.name 0xffffffff82717fc0
-ffffffff82717fc0
-  name = 0xffffffff8212445e "sysfs"
-ffffffff826d8140
-  name = 0xffffffff821440ef "tmpfs"
-ffffffff82703b40
-  name = 0xffffffff820f5100 "bdev"
-ffffffff82717c00
-  name = 0xffffffff820deece "proc"
-ffffffff826b5c20
-  name = 0xffffffff820ed357 "cgroup"
-ffffffff826b5f20
-  name = 0xffffffff820d82f0 "cgroup2"
-ffffffff826b5bc0
-  name = 0xffffffff820ec742 "cpuset"
-ffffffff82762160
-  name = 0xffffffff821440ec "devtmpfs"
-ffffffff827180e0
-  name = 0xffffffff820fa813 "configfs"
-ffffffff82718920
-  name = 0xffffffff820fbb20 "debugfs"
-ffffffff82718980
-  name = 0xffffffff820dd068 "tracefs"
-ffffffff8271c8c0
-  name = 0xffffffff820fdb7c "securityfs"
-ffffffff827ac4c0
-  name = 0xffffffff82179e54 "sockfs"
-ffffffff826d03e0
-  name = 0xffffffff820fd8c6 "bpf"
-ffffffff826f8b00
-  name = 0xffffffff820f3f58 "pipefs"
-ffffffff827186c0
-  name = 0xffffffff82101778 "ramfs"
-ffffffff82718720
-  name = 0xffffffff820facbf "hugetlbfs"
-ffffffff82718240
-  name = 0xffffffff820fab3f "devpts"
-ffffffff82718860
-  name = 0xffffffff820fae75 "autofs"
-ffffffff827189e0
-  name = 0xffffffff820fbc61 "pstore"
-ffffffff8271b360
-  name = 0xffffffff820fca4b "mqueue"
-ffffffff82724f80
-  name = 0xffffffff820feeca "selinuxfs"
-ffffffffc00b16e0
-  name = 0xffffffffc00a161d "rpc_pipefs"
-ffffffffc02dd400
-  name = 0xffffffffc02aaeb2 "xfs"
-```
-
-
 
 ---

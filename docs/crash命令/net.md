@@ -1,4 +1,101 @@
-# net
+# net(network command)
+
+## 概述
+
+net命令是crash工具中的一个命令，它用于显示当前系统的网络相关的信息，包括网络接口，协议，路由表，套接字，连接等。
+
+net命令可以帮助分析网络的状态和问题，例如检查网络接口是否正常，是否有网络拥塞，是否有网络攻击等。
+
+net命令有以下几种用法：
+
+- net：显示当前系统的网络接口的信息，包括名称，状态，IP地址，MAC地址，MTU等。
+- net -p：显示当前系统支持的网络协议的信息，包括名称，ID，头部长度等。
+- net -r：显示当前系统的路由表的信息，包括目标地址，网关地址，源地址，接口名称等。
+- net -s：显示当前系统的套接字的信息，包括协议类型，本地地址和端口，远程地址和端口，状态等。
+- net -S：显示当前系统的套接字的信息，并且根据进程ID或名称进行过滤。
+- net -c：显示当前系统的连接的信息，包括协议类型，本地地址和端口，远程地址和端口，状态等。
+- net -C：显示当前系统的连接的信息，并且根据进程ID或名称进行过滤。
+
+## 举例子
+
+- 查看当前系统的网络接口信息：
+
+```
+crash> net
+   NET_DEVICE     NAME   IP ADDRESS(ES)
+ff352cfe7e116000  lo     127.0.0.1
+ff352c7e737e8000  eno1   
+ff352c7e7671c000  eno2   
+ff352c7e5e200000  ens5f0 
+ff352c7e5dc00000  ens5f1 
+ff352c7e5da00000  ens8f0 
+ff352c7e5d400000  ens8f1 
+ff352cf8774b8000  bond2  
+ff352cf8774e0000  bond2.300 21.10.128.21
+ff352cf8775c2000  bond0  
+ff352cf8775ed000  bond0.150 21.10.132.21
+ff352c0d7c5f0000  docker0 172.17.0.1
+ff352cfe4247a000  virbr0 192.168.122.1
+ff352c8d1890c000  ovs-netdev 
+ff352c8d186a4000  br-ext 21.10.120.21
+ff352c8ccc1bc000  br-int 
+```
+
+- 显示arp信息：
+
+```
+crash> net -a
+NEIGHBOUR        IP ADDRESS      HW TYPE    HW ADDRESS         DEVICE  STATE
+ff352c0c971da800 21.10.120.31    ETHER      bc:16:95:4d:86:a3  br-ext  STALE
+ff352c7e44900400 21.10.120.46    ETHER      30:b9:30:03:58:43  br-ext  STALE
+ff352c0d6719e200 21.10.120.24    ETHER      bc:16:95:4d:20:ef  br-ext  STALE
+```
+
+- 查看当前系统的路由表信息：
+
+```
+crash> net -r
+   DESTINATION     GATEWAY         SOURCE          FLAGS   METRIC REF USE IFACE
+   default         192.168.0.1     *               UG      100    0   0   eth0
+   link-local      *               *               U       1000   0   0   eth0
+   localnet        *               *               U       100    0   0   eth0
+```
+
+- 查看当前系统的套接字信息：
+
+```
+crash> net -s |more
+PID: 2429976  TASK: ff352c8c1e7fbc80  CPU: 53  COMMAND: "ovs-vswitchd"
+FD      SOCKET            SOCK       FAMILY:TYPE SOURCE-PORT DESTINATION-PORT
+ 3 ff352cfe78f423c0 ff352c8cd0606c00 UNIX:STREAM 
+ 4 ff352cfe78f47900 ff352c8cd0606300 UNIX:STREAM 
+ 5 ff352cfe78f418c0 ff352c8cd0602400 UNIX:STREAM 
+```
+
+- 查看PID为1的进程使用的套接字信息：
+
+```
+crash> net -S 1 |more
+PID: 1      TASK: ff352c010ac55ac0  CPU: 37  COMMAND: "systemd"
+FD       SOCKET             SOCK      
+14  ff352cf866e3a940  ff352c8cbe3de800
+
+struct socket {
+  state = SS_UNCONNECTED, 
+  type = 3, 
+  flags = 8, 
+  wq = 0xff352c8ccb74fac0, 
+  file = 0xff352c8cc92c9800, 
+  sk = 0xff352c8cbe3de800, 
+  ops = 0xffffffff91af4240
+}
+struct inet_sock {
+```
+
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/net.html>
 
 ```
 NAME
@@ -176,3 +273,5 @@ EXAMPLES
      5  c08ea3cc  c50d3c80  INET:STREAM        0.0.0.0-1026         0.0.0.0-0
     
 ```
+
+---

@@ -1,4 +1,124 @@
-# irq
+# irq(IRQ data)
+
+## 概述
+
+crash工具中，irq命令是用于显示和管理系统中的中断请求（IRQ）的信息和状态的命令。IRQ是一种硬件信号，用于通知处理器有某个设备需要其服务。irq命令有以下作用：
+
+- 可以查看系统中所有活动的中断的信息，包括虚拟中断号、中断描述符、注册的中断处理函数、中断名称等。
+- 可以查看实际使用的中断的信息，过滤掉没有被申请的虚拟中断号。
+- 可以查看中断向量表，适用于Intel处理器。
+- 可以查看注册的软中断，包括软中断号、软中断处理函数、软中断名称等。
+- 可以查看中断的CPU亲和性值，即指定哪些CPU可以处理哪些中断。
+- 可以查看系统中断的使用和统计信息，类似于`cat /proc/interrupts`命令的输出。
+
+## 举例子
+
+- 列出再用irq
+
+```shell
+crash> irq -u |more 
+ IRQ   IRQ_DESC/_DATA      IRQACTION      NAME
+  0   ff352c0107c1c800  ffffffff91e200c0  "timer"
+  1   ff352c0107c1ca00      (unused)      
+  2   ff352c0107c1cc00      (unused)      
+  3   ff352c0107c1ce00      (unused)      
+  4   ff352c0107c1d000      (unused)      
+  5   ff352c0107c1d200      (unused)      
+  6   ff352c0107c1d400      (unused)      
+  7   ff352c0107c1d600      (unused)      
+  8   ff352c0107c1d800  ff352c808b608900  "rtc0"
+  9   ff352c0107c1da00  ff352cfe7f2f8000  "acpi"
+ 10   ff352c0107c1dc00      (unused)      
+ 11   ff352c0107c1de00      (unused)      
+ 12   ff352c0107c1e000      (unused)      
+ 13   ff352c0107c1e200      (unused)      
+ 14   ff352c0107c1e400      (unused)      
+ 15   ff352c0107c1e600      (unused)      
+ 16   ff352cfe7dd81a00  ff352c7e5f88c100  "i801_smbus"
+ 17   ff352c7e7a46de00      (unused)      
+ 18   ff352c7e7dcaa400      (unused)      
+ 19   ff352c7e6e983e00      (unused)      
+ 120  ff352c0107c1ec00  ff352c0107c27500  "dmar8"
+ 121  ff352c0107c1ee00  ff352c0107c27580  "dmar7"
+ 122  ff352c0107c1f000  ff352c0107c27600  "dmar6"
+ 123  ff352c0107c1f200  ff352c0107c27680  "dmar5"
+ 124  ff352c8087c11e00  ff352c0107c27700  "dmar4"
+ 125  ff352c8087c15800  ff352c0107c27780  "dmar3"
+ 126  ff352c8087c15600  ff352c0107c27800  "dmar2"
+ 127  ff352c8087c15000  ff352c0107c27880  "dmar1"
+ 128  ff352c8087c16c00  ff352c0107c27900  "dmar0"
+ 129  ff352c0107c1fe00  ff352c0107c27980  "dmar9"
+ 130  ff352c7e7a46ac00  ff352c808b609800  "PCIe PME"
+ 131  ff352c7e7a46fc00  ff352c808b609e00  "PCIe PME"
+ 132  ff352c7e7a46a800  ff352c808b609400  "PCIe PME"
+```
+
+irq命令的常用功能的用例如下：
+
+- `irq`：显示系统所有中断的使用信息，如虚拟中断号，中断的irq_desc，注册的irqaction以及名字。
+- `irq -u`：显示实际使用的中断的信息，去除哪些没有被申请的虚拟中断号。
+- `irq -d`：显示中断向量表，适用于Intel处理器。
+- `irq -b`：显示注册的软中断。
+- `irq -a`：显示中断的CPU亲和性值。
+- `irq -s`：显示系统中断的使用和统计信息，类似于`cat /proc/interrupts`命令的输出。如果想查看指定CPU上统计信息，可以使用`irq -s -c a`或者`irq -s -c 1,3,6-9`等参数。
+
+
+- 列出所有中断下半部
+
+```shell
+crash> irq -b
+SOFTIRQ_VEC      ACTION     
+    [0]     ffffffff90cbb370  <tasklet_hi_action>
+    [1]     ffffffff90d3c060  <run_timer_softirq>
+    [2]     ffffffff9131ccf0  <net_tx_action>
+    [3]     ffffffff91321660  <net_rx_action>
+    [4]     ffffffff90ff9b70  <blk_done_softirq>
+    [5]     ffffffff910578c0  <irq_poll_softirq>
+    [6]     ffffffff90cbb390  <tasklet_action>
+    [7]     ffffffff90cf7d80  <run_rebalance_domains>
+    [8]     ffffffff90d3ec00  <hrtimer_run_softirq>
+    [9]     ffffffff90d31870  <rcu_process_callbacks>
+```
+
+- 获取给定CPU的irq状态
+
+```shell
+crash> irq -c 1 -s |more
+           CPU1 
+  0:          0 IR-IO-APIC-edge     timer
+  8:          0 IR-IO-APIC-edge     rtc0
+  9:         26 IR-IO-APIC-fasteoi  acpi
+ 16:          0 IR-IO-APIC-fasteoi  i801_smbus
+120:          0 DMAR-MSI-edge     dmar8
+121:          0 DMAR-MSI-edge     dmar7
+122:          0 DMAR-MSI-edge     dmar6
+123:          0 DMAR-MSI-edge     dmar5
+124:          0 DMAR-MSI-edge     dmar4
+125:          0 DMAR-MSI-edge     dmar3
+126:          0 DMAR-MSI-edge     dmar2
+127:          0 DMAR-MSI-edge     dmar1
+128:          0 DMAR-MSI-edge     dmar0
+129:          0 DMAR-MSI-edge     dmar9
+130:          0 IR-PCI-MSI-edge     PCIe PME
+131:          0 IR-PCI-MSI-edge     PCIe PME
+132:          0 IR-PCI-MSI-edge     PCIe PME
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/irq.html>
 
 ```
 NAME
@@ -165,8 +285,5 @@ EXAMPLES
      88:         24        295 IR-PCI-MSI-edge     eth4
 
 ```
-
-
-
 
 ---

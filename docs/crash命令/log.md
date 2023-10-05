@@ -1,8 +1,116 @@
-# log
+# log(dump system message buffer)
+
+## 概述
+
+crash工具中，log命令是用于显示系统消息缓冲区的内容的命令。系统消息缓冲区是一个内核中的环形缓冲区，用于存储内核打印的日志信息，比如启动信息、错误信息、警告信息等。log命令有以下作用：
+
+- 可以查看系统崩溃前的日志信息，从而可能找到系统崩溃的原因或者线索。
+- 可以查看系统运行时的日志信息，从而了解系统的状态和性能。
+- 可以指定显示日志信息的级别，过滤掉不感兴趣的信息。
+- 可以指定显示日志信息的时间范围，只查看某个时间段内的信息。
+- 可以指定显示日志信息的格式，比如是否显示时间戳、进程ID、CPU号等。
+
+## 举例子
+
+- `log`：显示系统消息缓冲区中所有的日志信息。
+- `log -d`：显示系统消息缓冲区中所有的日志信息，并在每条信息前加上时间戳。
+- `log -l level`：只显示指定级别或者以上级别的日志信息。level可以是数字或者字符，表示日志级别。数字越小，级别越高。字符可以是emerg, alert, crit, err, warn, notice, info,
+  debug之一。
+- `log -t "start_time end_time"`：只显示指定时间范围内的日志信息。时间格式可以是HH:MM:SS或者HH:MM:SS.mmm。
+- `log -f "format"`：按照指定的格式显示日志信息。format可以包含以下字符：T表示时间戳，P表示进程ID，C表示CPU号，L表示日志级别，M表示日志内容。
+
+
+
+- 打印dmesg信息，不带时间戳
+
+```shell
+crash> log -t |more
+Linux version 4.19.90-2102.2.0.0062.el7.x86_64 (abuild@obs188) (gcc version 7.3.0 (GCC)) #1 SMP Thu Mar 10 03:34:36 UTC 2022
+Command line: BOOT_IMAGE=/vmlinuz-4.19.90-2102.2.0.0062.el7.x86_64 root=UUID=fceeab70-f645-40a2-9840-fb8bce062927 ro crashkernel=512M
+ iommu=pt intel_iommu=on default_hugepagesz=1024M hugepagesz=1024M hugepages=902 isolcpus=27-31,59-63,91-95,123-127 irqaffinity=26,58,
+90,122,0-25,32-57,64-89,96-121 nohz_full=27-31,59-63,91-95,123-127
+x86/fpu: Supporting XSAVE feature 0x001: 'x87 floating point registers'
+x86/fpu: Supporting XSAVE feature 0x002: 'SSE registers'
+x86/fpu: Supporting XSAVE feature 0x004: 'AVX registers'
+x86/fpu: Supporting XSAVE feature 0x020: 'AVX-512 opmask'
+x86/fpu: Supporting XSAVE feature 0x040: 'AVX-512 Hi256'
+x86/fpu: Supporting XSAVE feature 0x080: 'AVX-512 ZMM_Hi256'
+x86/fpu: Supporting XSAVE feature 0x200: 'Protection Keys User registers'
+x86/fpu: xstate_offset[2]:  576, xstate_sizes[2]:  256
+x86/fpu: xstate_offset[5]:  832, xstate_sizes[5]:   64
+x86/fpu: xstate_offset[6]:  896, xstate_sizes[6]:  512
+x86/fpu: xstate_offset[7]: 1408, xstate_sizes[7]: 1024
+x86/fpu: xstate_offset[9]: 2432, xstate_sizes[9]:    8
+x86/fpu: Enabled xstate features 0x2e7, context size is 2440 bytes, using 'compacted' format.
+BIOS-provided physical RAM map:
+BIOS-e820: [mem 0x0000000000000000-0x000000000009ffff] usable
+BIOS-e820: [mem 0x00000000000a0000-0x00000000000fffff] reserved
+BIOS-e820: [mem 0x0000000000100000-0x0000000055c7efff] usable
+BIOS-e820: [mem 0x0000000055c7f000-0x000000006e8defff] reserved
+BIOS-e820: [mem 0x000000006e8df000-0x000000006eedefff] ACPI NVS
+BIOS-e820: [mem 0x000000006eedf000-0x000000006f7fefff] ACPI data
+BIOS-e820: [mem 0x000000006f7ff000-0x000000006f7fffff] usable
+BIOS-e820: [mem 0x000000006f800000-0x000000008fffffff] reserved
+BIOS-e820: [mem 0x00000000fd000000-0x00000000fe7fffff] reserved
+BIOS-e820: [mem 0x00000000feb00000-0x00000000feb03fff] reserved
+BIOS-e820: [mem 0x00000000fec00000-0x00000000fec00fff] reserved
+```
+
+- 打印日志并带上优先级
+
+```shell
+crash> log -m |more
+[    0.000000] <a6>Linux version 4.19.90-2102.2.0.0062.el7.x86_64 (abuild@obs188) (gcc version 7.3.0 (GCC)) #1 SMP Thu Mar 10 03:34:3
+6 UTC 2022
+[    0.000000] <c6>Command line: BOOT_IMAGE=/vmlinuz-4.19.90-2102.2.0.0062.el7.x86_64 root=UUID=fceeab70-f645-40a2-9840-fb8bce062927 
+ro crashkernel=512M iommu=pt intel_iommu=on default_hugepagesz=1024M hugepagesz=1024M hugepages=902 isolcpus=27-31,59-63,91-95,123-127
+ irqaffinity=26,58,90,122,0-25,32-57,64-89,96-121 nohz_full=27-31,59-63,91-95,123-127
+[    0.000000] <c6>x86/fpu: Supporting XSAVE feature 0x001: 'x87 floating point registers'
+[    0.000000] <c6>x86/fpu: Supporting XSAVE feature 0x002: 'SSE registers'
+[    0.000000] <c6>x86/fpu: Supporting XSAVE feature 0x004: 'AVX registers'
+[    0.000000] <c6>x86/fpu: Supporting XSAVE feature 0x020: 'AVX-512 opmask'
+[    0.000000] <c6>x86/fpu: Supporting XSAVE feature 0x040: 'AVX-512 Hi256'
+[    0.000000] <c6>x86/fpu: Supporting XSAVE feature 0x080: 'AVX-512 ZMM_Hi256'
+[    0.000000] <c6>x86/fpu: Supporting XSAVE feature 0x200: 'Protection Keys User registers'
+[    0.000000] <c6>x86/fpu: xstate_offset[2]:  576, xstate_sizes[2]:  256
+[    0.000000] <c6>x86/fpu: xstate_offset[5]:  832, xstate_sizes[5]:   64
+[    0.000000] <c6>x86/fpu: xstate_offset[6]:  896, xstate_sizes[6]:  512
+[    0.000000] <c6>x86/fpu: xstate_offset[7]: 1408, xstate_sizes[7]: 1024
+[    0.000000] <c6>x86/fpu: xstate_offset[9]: 2432, xstate_sizes[9]:    8
+[    0.000000] <c6>x86/fpu: Enabled xstate features 0x2e7, context size is 2440 bytes, using 'compacted' format.
+[    0.000000] <c6>BIOS-provided physical RAM map:
+[    0.000000] <c6>BIOS-e820: [mem 0x0000000000000000-0x000000000009ffff] usable
+[    0.000000] <c6>BIOS-e820: [mem 0x00000000000a0000-0x00000000000fffff] reserved
+[    0.000000] <c6>BIOS-e820: [mem 0x0000000000100000-0x0000000055c7efff] usable
+[    0.000000] <c6>BIOS-e820: [mem 0x0000000055c7f000-0x000000006e8defff] reserved
+[    0.000000] <c6>BIOS-e820: [mem 0x000000006e8df000-0x000000006eedefff] ACPI NVS
+[    0.000000] <c6>BIOS-e820: [mem 0x000000006eedf000-0x000000006f7fefff] ACPI data
+[    0.000000] <c6>BIOS-e820: [mem 0x000000006f7ff000-0x000000006f7fffff] usable
+[    0.000000] <c6>BIOS-e820: [mem 0x000000006f800000-0x000000008fffffff] reserved
+[    0.000000] <c6>BIOS-e820: [mem 0x00000000fd000000-0x00000000fe7fffff] reserved
+[    0.000000] <c6>BIOS-e820: [mem 0x00000000feb00000-0x00000000feb03fff] reserved
+[    0.000000] <c6>BIOS-e820: [mem 0x00000000fec00000-0x00000000fec00fff] reserved
+[    0.000000] <c6>BIOS-e820: [mem 0x00000000fec80000-0x00000000fed00fff] reserved
+[    0.000000] <c6>BIOS-e820: [mem 0x00000000ff000000-0x00000000ffffffff] reserved
+```
+
+- 打印内核audit日志
+
+```shell
+crash> log -a |more
+log: kernel audit log is empty
+log: kernel audit log is empty
+crash> 
+```
+
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/log.html>
 
 ```
 NAME
-  log - dump system message buffer 转存内核日志 log_buf
+  log - dump system message buffer
 
 SYNOPSIS
   log [-Ttdma]

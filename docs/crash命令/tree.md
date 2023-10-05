@@ -1,4 +1,38 @@
-# tree
+# tree(display radix tree, XArray or red-black tree)
+
+## 概述
+
+tree命令是crash工具中的一个命令，它可以用来显示系统中的树形数据结构的信息，如B树、红黑树等。
+
+树形数据结构是内核中用来组织和存储数据的一种常见的方式，它们可以提高数据的查找、插入和删除的效率。
+
+tree命令可以帮助我们分析内核中的树形数据结构相关的问题，如树的平衡性、节点的数量和内容等。
+
+## 举例子
+
+- tree -t <type>：指定要搜索的树的类型，如果不指定，默认是红黑树类型。目前支持的类型有radix（B树）、xarray（B树）、rbtree（红黑树）。
+- tree -r <offset>：指定树根在包含它的数据结构中的偏移量，可以用structure.member或直接的一个数值表示。如果偏移量为0，可以省略这个参数。
+- tree -o <offset>：指定红黑树节点在包含它的数据结构中的偏移量，可以用structure.member或直接的一个数值表示。这个参数只适用于红黑树。
+- tree -s <member>：指定要输出挂在树上的数据结构的成员，可以用structure.member或structure.member.member或structure.member[index]表示。
+- tree <address>：指定要搜索的树根或包含树根的数据结构的地址。
+
+```shell
+crash> whatis vmap_area_root
+struct rb_root vmap_area_root;
+crash> tree -t rbtree -o vmap_area.rb_node vmap_area_root
+ffff956d014e0640
+ffff956d012b1380
+ffff956d00025640
+ffff956d00025c00
+ffff956d00025140
+ffff956d00025940
+ffff956d00025800
+ffff956d000250c0
+```
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/tree.html>
 
 ```
 NAME
@@ -418,6 +452,5 @@ EXAMPLES
       }
 
 ```
-
 
 ---

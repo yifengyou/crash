@@ -1,33 +1,34 @@
-# set
+# set(set a process context or internal crash variable)
 
 ## 简述
 
+set命令主要有两类作用：
+1. 根据PID或task地址切换默认分析的目标对象
+2. 设置crash环境变量（调试模式、输出格式等控制）
 
-crash命令中set可以用来设置或显示crash的内部变量，或者切换当前的分析对象。
+```
+set [[-a] [pid | taskp] | [-c cpu] | -p] | [crash_variable [setting]] | -v
+```
 
-set [pid | taskp | [-c cpu] | -p] | [crash_variable [setting]] | -v
-
+```shell
 如果不带参数，set命令会显示当前的分析对象，即当前的进程或任务。
 如果带有pid或taskp参数，set命令会切换当前的分析对象为指定的进程或任务。
 如果带有-c cpu参数，set命令会切换当前的分析对象为指定的CPU上的活动任务。
 如果带有-p参数，set命令会切换当前的分析对象为发生panic时的任务。
 如果带有crash_variable和setting参数，set命令会设置crash的内部变量为指定的值。例如，set scroll on表示开启滚动条。
 如果带有-v参数，set命令会显示crash的所有内部变量及其值。
+```
 
 set的一些常用的内部变量有：
 
 1. scroll：控制是否开启滚动条。
 2. radix：控制输出数据的进制，默认为16进制。
-3. lines：控制每页显示的行数，默认为24行。
-4. silent：控制是否显示错误信息，默认为关闭。
-5. debug：控制是否开启调试模式，默认为关闭。
-6. set命令还可以用来设置一些环境变量，例如：
+3. silent：控制是否显示错误信息，默认为关闭。
+4. debug：控制是否开启调试模式，默认为关闭。
+5. set命令还可以用来设置一些环境变量
 
-set PS1='[crash] '：设置crash的提示符为[crash]。
-set HOME=/root：设置crash的主目录为/root。
-set命令的具体用法和示例可以通过help set来查看帮助。12
 
-## 举栗子
+## 举例子
 
 - 如果你想查看当前的分析对象是哪个进程或任务，你可以输入set命令，它会显示类似这样的输出：
 
@@ -46,6 +47,18 @@ COMMAND: "crash"
 
 ```
 crash> set 1
+PID: 1
+COMMAND: "systemd"
+TASK: ffff8b62c11ed000  [THREAD_INFO: ffff8b62c11ed000]
+CPU: 3
+STATE: TASK_INTERRUPTIBLE 
+crash> 
+```
+
+- 如果你想切换当前的分析task为ffff8b62c11ed000，你可以输入```set ffff8b62c11ed000```命令，它会显示类似这样的输出：
+
+```
+crash> set ffff8b636032a800
 PID: 1
 COMMAND: "systemd"
 TASK: ffff8b62c11ed000  [THREAD_INFO: ffff8b62c11ed000]
@@ -136,12 +149,64 @@ output radix: 10 (decimal)
 crash> 
 ```
 
-- 如果你想设置crash的环境变量PS1为[crash] ，改变crash的提示符，默认是crash> ，你可以输入set PS1='[crash] '命令，它不会有任何输出，但是下一次输入命令时会看到提示符变成了[crash] 。 
 
-以上就是一些crash命令中set的用法的例子。我希望这些例子能帮助你理解和使用set命令。如果你还有其他关于crash命令的问题，欢迎继续提问。😊
+
+- set debug：这个参数可以用来设置或显示是否开启调试模式，默认为关闭。如果你想查看crash命令的内部执行过程，你可以使用这个参数。例如，如果你想开启debug模式，你可以输入set debug on命令，它会显示类似这样的输出：
+
+```
+crash> set debug 0
+debug: 0
+crash> set debug
+debug: 0
+crash> set
+    PID: 100
+COMMAND: "cpuhp/18"
+   TASK: ff352c010a561e40  [THREAD_INFO: ff352c010a561e40]
+    CPU: 18
+  STATE: TASK_INTERRUPTIBLE 
+crash> set debug 100
+debug: 100
+     text hit rate: 65% (5224 of 7954)
+crash> set debug
+debug: 100
+     text hit rate: 65% (5224 of 7954)
+crash> set
+    PID: 100
+COMMAND: "cpuhp/18"
+   TASK: ff352c010a561e40  [THREAD_INFO: ff352c010a561e40]
+    CPU: 18
+  STATE: TASK_INTERRUPTIBLE 
+     text hit rate: 65% (5224 of 7954)
+crash> 
+```
+
+- 是否使用内核的unwind机制来回溯堆栈信息
+
+set的内部变量unwind可以用来控制是否使用内核的unwind机制来回溯堆栈信息，默认为关闭。
+
+unwind机制是一种在内核中实现的根据函数调用约定和指令指针来推断函数返回地址和栈帧大小的方法，它可以提高堆栈回溯的准确性和完整性，但是也会增加一些开销和复杂度。
+
+```shell
+crash> set unwind
+unwind: on
+crash> set unwind off
+unwind: off
+crash> set unwind on
+unwind: on
+crash> set unwind
+unwind: on
+crash>
+```
+
+开启unwind机制，当使用bt命令回溯堆栈时，会尝试使用unwind机制来获取更多的信息。当关闭unwind机制，当使用bt命令回溯堆栈时，会使用传统的基于帧指针的方法来获取信息。
+
+
+
 
 
 ## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/set.html>
 
 ```
 NAME

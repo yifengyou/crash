@@ -1,4 +1,73 @@
-# struct
+# struct(structure contents)
+
+## 概述
+
+```shell
+sig [[-l] | [-s sigset]] | [-g] [pid | taskp] ...
+```
+
+struct命令是crash工具中的一个命令，它用于显示或解析内核中的结构体的信息。
+
+结构体是一种将多个相关的变量组合在一起的数据类型，它可以表示内核中的各种对象，如进程，文件，网络包等。
+
+struct命令可以帮助分析内核中的数据结构，查看结构体的定义，大小，成员，对齐方式等。
+
+struct命令有以下几种用法：
+
+- struct <name>：显示指定名称的结构体的定义，包括成员的名称，类型，偏移量和大小。
+- struct <name> <address>：从指定的地址开始解析指定名称的结构体，并显示其成员的值。
+- struct -o <name>：显示指定名称的结构体的大小。
+- struct -a <name>：显示指定名称的结构体的对齐方式。
+
+## 举例子
+
+- 查看task_struct结构体的定义：
+
+```
+crash> struct task_struct
+struct task_struct {
+  volatile long state;                        /*     0     8 */
+  void *stack;                                /*     8     8 */
+  atomic_t usage;                             /*    16     4 */
+  unsigned int flags;                         /*    20     4 */
+  unsigned int ptrace;                        /*    24     4 */
+  ...
+}                                            /*           5760 */
+```
+
+- 查看PID为1234的进程的task_struct结构体的值：
+
+```
+crash> struct task_struct ffff88011e8b8000
+struct task_struct {
+    state = 0, 
+    stack = 0xffff88011e8b8000, 
+    usage = {
+        counter = 2
+    }, 
+    flags = 2147483648, 
+    ptrace = 0, 
+    ...
+}
+```
+
+- 查看task_struct结构体的大小：
+
+```
+crash> struct -o task_struct
+SIZE: 5760
+```
+
+- 查看task_struct结构体的对齐方式：
+
+```
+crash> struct -a task_struct
+ALIGN: 64
+```
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/struct.html>
 
 ```
 NAME

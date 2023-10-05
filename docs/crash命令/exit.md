@@ -1,4 +1,12 @@
-# exit
+# exit(exit this session)
+
+## 概述
+
+退出crash会话，等同于q、quit
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/exit.html>
 
 ```
 NAME
@@ -13,6 +21,5 @@ DESCRIPTION
 NOTE
   This command is equivalent to the "q" command.
 ```
-
 
 ---

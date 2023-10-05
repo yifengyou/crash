@@ -1,4 +1,62 @@
-# vm
+# vm(virtual memory)
+
+## 概述
+
+crash工具中，vm命令是一个用来查看虚拟内存信息的命令，它可以显示用户或内核虚拟内存所对应的物理内存，以及虚拟内存区域（VMA）的属性和内容。
+
+vm命令有以下几种常用功能：
+
+- vm：不带参数的vm命令可以显示当前进程的用户虚拟内存信息，包括mm_struct地址、VMA数量、总大小、RSS等。
+- vm <pid>：带进程ID参数的vm命令可以显示指定进程的用户虚拟内存信息，与不带参数的vm命令相同。
+- vm -M <address>
+  ：带-M参数和mm_struct地址的vm命令可以显示指定mm_struct结构的用户虚拟内存信息，这个参数用于无法通过task_struct获取mm_struct，但是可以通过其他途径获取mm_struct地址的情况。
+- vm -m：带-m参数的vm命令可以显示当前进程的mm_struct结构的内容，与用struct mm_struct <address>命令相同。
+- vm -m <pid>：带-m参数和进程ID的vm命令可以显示指定进程的mm_struct结构的内容，与用struct mm_struct <address>命令相同。
+- vm -v：带-v参数的vm命令可以显示当前进程的所有VMA结构的内容，与用struct vm_area_struct <address>命令相同。
+- vm -v <pid>：带-v参数和进程ID的vm命令可以显示指定进程的所有VMA结构的内容，与用struct vm_area_struct <address>命令相同。
+- vm -P <address>：带-P参数和虚拟地址的vm命令可以显示该虚拟地址所在的VMA结构的内容，以及该虚拟地址对应的物理地址或文件名和偏移量。
+- vm -f <flags>：带-f参数和十六进制数值的vm命令可以将该数值翻译为VMA标志（flags）的含义，例如READ、WRITE、EXEC等。
+- vm -R <string>：带-R参数和字符串的vm命令可以在当前进程的所有VMA中搜索包含该字符串的项，例如文件名、标志、虚拟地址等。
+
+## 举例子
+
+- 查看当前进程（crash）的用户虚拟内存信息：
+
+```shell
+crash> vm | more
+PID: 2429976  TASK: ff352c8c1e7fbc80  CPU: 53  COMMAND: "ovs-vswitchd"
+       MM               PGD          RSS    TOTAL_VM
+ff352cfe63700d80  ff352c8cce740000  759928k  561961416k
+      VMA           START       END     FLAGS FILE
+ff352c0cfe06cf68  100000000  100007000 80020fb /run/openvswitch/dpdk/rte/config
+ff352c0cfe06ccb0  100007000  100035000 80020fb /run/openvswitch/dpdk/rte/fbarray_memzone
+ff352c0cfe06c910  100035000  100036000 80020fb /run/openvswitch/dpdk/rte/fbarray_memseg-10485
+76k-0-0
+ff352c0cfe06d3f0  140000000  180000000 84600fb /dev/hugepages/rtemap_0
+ff352c0cfe06e7e0  180000000  1c0000000 84600fb /dev/hugepages/rtemap_1
+ff352c0cfe06fe88  1c0000000  200000000 84600fb /dev/hugepages/rtemap_2
+ff352c0cfe06f3a8  200000000  240000000 84600fb /dev/hugepages/rtemap_3
+```
+
+- 过滤特定FLAGS的记录
+
+```shell
+crash> vm -R 80020fb
+PID: 2429976  TASK: ff352c8c1e7fbc80  CPU: 53  COMMAND: "ovs-vswitchd"
+       MM               PGD          RSS    TOTAL_VM
+ff352cfe63700d80  ff352c8cce740000  759928k  561961416k
+      VMA           START       END     FLAGS FILE
+ff352c0cfe06cf68  100000000  100007000 80020fb /run/openvswitch/dpdk/rte/config
+ff352c0cfe06ccb0  100007000  100035000 80020fb /run/openvswitch/dpdk/rte/fbarray_memzone
+ff352c0cfe06c910  100035000  100036000 80020fb /run/openvswitch/dpdk/rte/fbarray_memseg-1048576k-0-0
+vm: page excluded: physical address: 7e00000000  type: "pmd page"
+crash> 
+```
+
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/vm.html>
 
 ```
 NAME

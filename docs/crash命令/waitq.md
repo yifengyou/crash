@@ -1,4 +1,28 @@
-# waitq
+# waitq(virtual memory)
+
+## 概述
+
+crash工具中，waitq命令是一个用来查看等待队列中的任务的命令，它可以显示哪些进程或线程因为等待某些资源或事件而被阻塞在等待队列中，
+
+以及它们的优先级和状态。等待队列是内核中用来实现同步机制的一种数据结构，它可以让进程或线程在不占用CPU资源的情况下等待某些条件的满足。
+
+
+## 举例子
+
+- 查看地址为ffff88007f8aa080的等待队列中的任务：
+
+```shell
+  crash> waitq ffff88007f8aa080
+  WAITQ: ffff88007f8aa080
+  PID    PRIO STATE TASK_STRUCT    FUNCTION
+  1000   120  D    ffff88007f8a9c00 mutex_lock+0x0/0x30 [kernel]
+  1001   120  D    ffff88007f8a9c80 mutex_lock+0x0/0x30 [kernel]
+
+```
+
+## 帮助信息
+
+* [https://crash-utility.github.io/help_pages/waitq.html](https://crash-utility.github.io/help_pages/waitq.html)
 
 ```
 NAME
@@ -36,20 +60,5 @@ EXAMPLES
     PID: 13691  TASK: c3534000  CPU: 1   COMMAND: "bash"
 
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ---

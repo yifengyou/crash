@@ -1,4 +1,79 @@
-# timer
+# timer(timer queue data)
+
+## 概述
+
+timer命令是crash工具中的一个命令，它可以用来显示系统中的定时器信息，如定时器的类型、函数、数据、到期时间、周期等。
+
+定时器是内核中用来实现延时执行或周期执行某些任务的机制，它们可以用来实现调度、超时、心跳等功能。
+
+timer命令可以帮助我们分析内核中的定时器相关的问题，如定时器泄漏、定时器冲突、定时器延迟等。
+
+```shell
+  timer [-r][-C cpu]
+```
+
+## 举例子
+
+- 显示SMP中timer信息
+
+```shell
+crash> timer 
+JIFFIES   
+4303616256
+
+TIMER_BASES[0][BASE_STD]: ffff956e2bc22a40
+  EXPIRES        TTE         TIMER_LIST     FUNCTION
+  4303820000   203744  ffff956e2bc1dca0  ffffffffa1244fe0  <mce_timer_fn>
+TIMER_BASES[0][BASE_DEF]: ffff956e2bc23cc0
+  EXPIRES        TTE       TIMER_LIST     FUNCTION
+  4303614000  -2256  ffff956e2bc2fda0  ffffffffa1315850  <delayed_work_timer_fn>
+  4303614000  -2256  ffffffffa305bc00  ffffffffa1315850  <delayed_work_timer_fn>
+
+TIMER_BASES[1][BASE_STD]: ffff956e2bc62a40
+  EXPIRES        TTE         TIMER_LIST     FUNCTION
+  4303819997   203741  ffff956e2bc5dca0  ffffffffa1244fe0  <mce_timer_fn>
+TIMER_BASES[1][BASE_DEF]: ffff956e2bc63cc0
+  EXPIRES        TTE     TIMER_LIST     FUNCTION
+  (none)
+```
+
+- 显示hrtimer信息
+
+```shell
+crash> timer -r
+CPU: 0  HRTIMER_CPU_BASE: ffff956e2bc24f40
+  CLOCK: 0  HRTIMER_CLOCK_BASE: ffff956e2bc24f80  [ktime_get]
+     CURRENT   
+  8995099000000
+   SOFTEXPIRES      EXPIRES          TTE          HRTIMER           FUNCTION    
+  8996002000000  8996002000000     903000000  ffff956e2bc25760  ffffffffa13ecbd0  <watchdog_timer_fn>
+  9180127000000  9180127000000  185028000000  ffff956e2bc25580  ffffffffa13a4570  <tick_sched_timer>
+
+  CLOCK: 1  HRTIMER_CLOCK_BASE: ffff956e2bc24fc0  [ktime_get_real]
+  (empty)
+
+  CLOCK: 2  HRTIMER_CLOCK_BASE: ffff956e2bc25000  [ktime_get_boottime]
+  (empty)
+
+  CLOCK: 3  HRTIMER_CLOCK_BASE: ffff956e2bc25040  [ktime_get_clocktai]
+  (empty)
+
+  CLOCK: 4  HRTIMER_CLOCK_BASE: ffff956e2bc25080  [ktime_get]
+  (empty)
+
+  CLOCK: 5  HRTIMER_CLOCK_BASE: ffff956e2bc250c0  [ktime_get_real]
+  (empty)
+
+  CLOCK: 6  HRTIMER_CLOCK_BASE: ffff956e2bc25100  [ktime_get_boottime]
+  (empty)
+
+  CLOCK: 7  HRTIMER_CLOCK_BASE: ffff956e2bc25140  [ktime_get_clocktai]
+  (empty)
+```
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/timer.html>
 
 ```
 NAME
@@ -86,7 +161,5 @@ EXAMPLES
     ...
 
 ```
-
-
 
 ---

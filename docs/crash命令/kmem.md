@@ -1,4 +1,87 @@
-# kmem
+# kmem(kernel memory)
+
+## 概述
+
+crash工具中，kmem命令是用于显示和管理内核内存的信息和状态的命令。kmem命令有以下作用：
+
+- 可以查看系统中所有活动的共享内存段、消息队列和信号量数组的信息，包括键、标识符、权限、大小、连接数、状态等。
+- 可以查看各种资源的创建者、所有者、最近使用的进程ID和时间等。
+- 可以查看各种资源的使用总结和系统限制信息，包括分配的个数、占用的空间、最大值等。
+- 可以查看系统中所有活动的中断的信息，包括虚拟中断号、中断描述符、注册的中断处理函数、中断名称等。
+- 可以查看实际使用的中断的信息，过滤掉没有被申请的虚拟中断号。
+- 可以查看中断向量表，适用于Intel处理器。
+- 可以查看注册的软中断，包括软中断号、软中断处理函数、软中断名称等。
+- 可以查看中断的CPU亲和性值，即指定哪些CPU可以处理哪些中断。
+- 可以查看系统中断的使用和统计信息，类似于`cat /proc/interrupts`命令的输出。
+- 可以查看系统内存的使用统计信息，类似于`cat /proc/meminfo`命令的输出。
+- 可以查看vmalloc分配的内存区域的信息。
+- 可以查看内核中的三张内存使用统计信息的表的内容vm_zone_stat/vm_node_stat/vm_numa_stat。
+- 可以查看巨型页信息。
+- 可以将指定的数字翻译为page的flags。
+- 可以查看指定page或物理地址对应的slab或object信息。
+- 可以获取per-cpu变量在每个cpu上的基地址。
+
+## 举例子
+
+- 显示内存使用情况
+
+```shell
+crash> kmem -i
+                 PAGES        TOTAL      PERCENTAGE
+    TOTAL MEM  263925119    1006.8 GB         ----
+         FREE  20122900      76.8 GB    7% of TOTAL MEM
+         USED  243802219       930 GB   92% of TOTAL MEM
+       SHARED  1011439       3.9 GB    0% of TOTAL MEM
+      BUFFERS      785       3.1 MB    0% of TOTAL MEM
+       CACHED  3142833        12 GB    1% of TOTAL MEM
+         SLAB   364056       1.4 GB    0% of TOTAL MEM
+
+   TOTAL HUGE  236453888       902 GB         ----
+    HUGE FREE  139984896       534 GB   59% of TOTAL HUGE
+
+   TOTAL SWAP        0            0         ----
+    SWAP USED        0            0    0% of TOTAL SWAP
+    SWAP FREE        0            0    0% of TOTAL SWAP
+
+ COMMIT LIMIT  13735615      52.4 GB         ----
+    COMMITTED  7297534      27.8 GB   53% of TOTAL LIMIT
+```
+
+- `kmem -a`：显示系统中所有活动的共享内存段、消息队列和信号量数组的信息。
+- `kmem -m`：显示共享内存段的信息。
+- `kmem -q`：显示消息队列的信息。
+- `kmem -s`：显示信号量数组的信息。
+- `kmem -c`：显示资源的创建者和所有者。
+- `kmem -p`：显示资源最近操作的时间。
+- `kmem -u`：显示资源使用状态汇总信息。
+- `kmem -l`：显示资源系统限制信息。
+- `kmem -i id`：显示指定标识符的资源详细信息。
+- `kmem`：显示系统所有中断的使用信息，如虚拟中断号，中断描述符，注册函数和名字。
+- `kmem -u`：显示实际使用的中断的信息，去除哪些没有被申请的虚拟中断号。
+- `kmem -d`：显示中断向量表，适用于Intel处理器。
+- `kmem -b`：显示注册的软中断。
+- `kmem -a`：显示中断的CPU亲和性值。
+- `kmem -s`：显示系统中断的使用和统计信息，类似于`cat /proc/interrupts`命令的输出。如果想查看指定CPU上统计信息，可以使用`kmem -s -c a`或者`kmem -s -c 1,3,6-9`等参数。
+- `kmem -i`：显示系统内存使用统计信息，类似于`cat /proc/meminfo`命令输出。如果想查看指定节点上统计信息，可以使用`kmem -i -N 0`或者`kmem -i -N 1,3,6-9`等参数。
+- `kmem -v`：显示vmalloc分配的内存区域的信息。
+- `kmem -V`：显示内核中的三张内存使用统计信息的表的内容vm_zone_stat/vm_node_stat/vm_numa_stat。
+- `kmem -h`：显示巨型页信息。
+- `kmem -g`：查看page flags的定义。
+- `kmem -g 0x201`：将指定的数字翻译为page的flags。
+- `kmem -p <page *>`：查看指定page的信息。
+- `kmem -p`：查看所有page的信息。
+- `kmem -m flags,lru,lru.next`：查看page中某些成员的值。
+- `kmem -n`：查看memory node的信息，比如node中每个zone的mem_map以及起始物理地址。
+- `kmem -z`：查看每个zone内存的使用统计信息。
+- `kmem -s 或者 kmem -S`：查看slab的信息。如果 `-s` 后面跟的是一个地址，那么会显示这个地址所属的slub以及object信息。
+- `kmem -P`：如果kmem后面使用的地址都是物理地址。
+- `kmem -p <物理地址>`：查看指定的物理地址对应的page的信息。
+- `kmem <物理地址>`：查看某个物理地址对应的slab以及page的信息。
+- `kmem -o`：获取per-cpu变量在每个cpu上的基地址。
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/kmem.html>
 
 ```
 NAME
@@ -651,7 +734,5 @@ EXAMPLES
     crash>
 
 ```
-
-
 
 ---

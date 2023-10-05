@@ -1,4 +1,41 @@
-# bpf
+# bpf(extended Berkeley Packet Filter (eBPF))
+
+## 概述
+
+crash中bpf子命令是用来显示和操作BPF（Berkeley Packet Filter）程序和映射的。
+
+BPF是一种在内核中运行的字节码，可以用来过滤网络数据包、跟踪系统事件、执行安全策略等。crash中bpf子命令有以下几种常用功能：
+
+- bpf: 显示当前加载的所有BPF程序和映射的基本信息，如ID、类型、标签、地址等。
+- bpf -m <map_id>: 显示指定映射的详细信息，如键值大小、最大条目数、内存锁定量、名称、用户ID等。
+- bpf -M: 显示所有映射的详细信息。
+- bpf -p <prog_id>: 显示指定程序的详细信息，如加载时间、用户ID、翻译后的字节码大小、内存锁定量、关联的映射ID等。
+- bpf -P: 显示所有程序的详细信息。
+- bpf -d <prog_id>: 反汇编指定程序的字节码，显示其操作码和操作数。
+- bpf -D: 反汇编所有程序的字节码。
+
+```shell
+bpf [[-p ID | -P] [-tTj]] [[-m ID] | -M] [-s] [-xd]
+```
+
+## 举例子
+
+- 获取当前系统中的bpf程序
+
+```shell
+crash> bpf
+ ID      BPF_PROG       BPF_PROG_AUX   BPF_PROG_TYPE       TAG        USED_MAPS
+ 1   ffffb8af01095000 ffff8b62d4368000    KPROBE     31a97396edc051ea     1     
+ 2   ffffb8af00eb4000 ffff8b62d01b5800    KPROBE     34f39ff01170f27b     1     
+
+ ID      BPF_MAP          BPF_MAP_TYPE     MAP_FLAGS
+ 1   ffff8b62c7beee00   PERF_EVENT_ARRAY    00000000 
+crash> 
+```
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/bpf.html>
 
 ```
 NAME
@@ -481,7 +518,5 @@ EXAMPLES
   crash> bpf -PM -jTs
 
 ```
-
-
 
 ---

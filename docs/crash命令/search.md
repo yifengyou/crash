@@ -1,4 +1,94 @@
-# search
+# search(search memory)
+
+## 概述
+
+search命令是crash工具的一个内置命令，它可以用来在内核内存中搜索指定的值、字符串、表达式或符号。它的语法如下：
+
+```shell
+  search [-s start] [ -[kKV] | -u | -p | -t | -T ] [-e end | -l length] [-m mask]
+         [-x count] -[cwh] [value | (expression) | symbol | string] ...
+```
+
+其中：
+
+- -k 表示搜索内核虚拟地址空间，这是默认的搜索选项。
+- -K 表示搜索内核虚拟地址空间，但排除vmalloc区、内核模块区和mem_map区。
+- -u 表示搜索当前进程的用户虚拟地址空间。
+- -p 表示搜索物理内存地址空间。
+- -t 表示搜索每个进程的内核栈。
+- -T 表示搜索当前运行的进程的内核栈。
+- -s start 表示设置搜索的起始地址，可以是十六进制或符号名。
+- -e end 表示设置搜索的结束地址，可以是十六进制或符号名。
+- -l len 表示设置搜索的长度，单位是字节。
+- -m mask 表示设置屏蔽位，即搜索时不比较被屏蔽的位，可以是十六进制或符号名。
+- -x count 表示设置显示匹配到的地址前后一部分内存数据的数量，单位是被搜索的内容的大小。
+- -w 表示按32位搜索，这个选项只在64位系统上有效，可以分别比较高32位和低32位。
+- -h 表示按16位搜索。
+- -c string 表示搜索字符串，如果字符串中有空格，需要用双引号括起来。
+- value|expression|symbol 表示要搜索的值、表达式或符号，可以是十六进制或符号名。
+
+search命令的用途有：
+
+- 查找内核内存中的特定值、字符串、表达式或符号，例如系统版本号、模块名、设备名等。
+- 分析内核内存中的数据结构、变量、函数等，例如链表、散列表、互斥锁等。
+- 定位内核崩溃时的错误代码、寄存器值、堆栈信息等。
+
+## 举例子
+
+下面是一些search命令的示例：
+
+- 搜索系统版本号：
+
+```shell
+crash> search "Linux version"
+ffffffff81a8a000:  Linux version 4.18.0-193.el8.x86_64 (mockbuild@x86-vm-08.build.eng.bos.redhat.com) (gcc version 8.3.1
+20191121 (Red Hat 8.3.1-5) (GCC)) #1 SMP Fri May 8 10:59:10 UTC 2020
+```
+
+- 在内核代码段中搜索0xdeadbeef的值：
+
+```
+crash> search ffffffff80000000 ffffffff9fffffff 0xdeadbeef
+ffffffff80000000: 0xdeadbeef
+ffffffff80000004: 0xdeadbeef
+ffffffff80000008: 0xdeadbeef
+...
+```
+
+- 在用户堆栈中搜索"hello"字符串：
+
+```
+crash> search -s ffffa0f442cd7000 ffffa0f442cd7fff "hello"
+ffffa0f442cd7a10: "hello"
+ffffa0f442cd7a20: "hello"
+ffffa0f442cd7a30: "hello"
+...
+```
+
+- 在内核数据段中搜索大于1000小于2000的值：
+
+```
+crash> search -e ffffffff9b000000 ffffffff9bffffff "(v > 1000) && (v < 2000)"
+ffffffff9b000010: 1001
+ffffffff9b000014: 1002
+ffffffff9b000018: 1003
+...
+```
+
+- 在内核代码段中搜索0xdeadbeef的值，并显示其虚拟地址和物理地址：
+
+```
+crash> search -x ffffffff80000000 ffffffff9fffffff 0xdeadbeef
+VIRTUAL           PHYSICAL
+ffffffff80000000  =>  100000
+ffffffff80000004  =>  100004
+ffffffff80000008  =>  100008
+...
+```
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/search.html>
 
 ```
 NAME
@@ -21,25 +111,25 @@ DESCRIPTION
               must be appropriate for the memory type specified; if no memory
               type is specified, the default is kernel virtual address space.
           -k  If no start address is specified, start the search at the base
-              of kernel virtual address space.  This option is the default.
+              of kernel virtual address space.  This option is the default. 默认检索内核空间
           -K  Same as -k, except that mapped kernel virtual memory that was
               allocated by vmalloc(), module memory, or virtual mem_map regions
-              will not be searched.
+              will not be searched. 检索内核空间，但是忽略vmalloc、模块内存、映射的内存区域
           -V  Same as -k, except that unity-mapped kernel virtual memory and
               mapped kernel-text/static-data (x86_64 and ia64) will not be
               searched.
           -u  If no start address is specified, start the search at the base
               of the current context's user virtual address space.  If a start
               address is specified, then this option specifies that the start
-              address is a user virtual address.
+              address is a user virtual address. (当前)用户态空间内存
           -p  If no start address is specified, start the search at the base
               of physical address space.  If a start address is specified,
               then this option specifies that the start address is a physical
               address.
           -t  Search only the kernel stack pages of every task.  If one or more
               matches are found in a task's kernel stack, precede the output
-              with a task-identifying header.
-          -T  Same as -t, except only the active task(s) are considered.
+              with a task-identifying header. 内核栈中检索
+          -T  Same as -t, except only the active task(s) are considered. 仅活跃的内核栈
       -e end  Stop the search at this hexadecimal user or kernel virtual
               address, kernel symbol, or physical address.  The end address
               must be appropriate for the memory type specified.

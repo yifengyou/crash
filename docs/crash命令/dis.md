@@ -1,5 +1,23 @@
 # dis
 
+## 概述
+
+
+
+
+
+## 举例子
+
+
+
+
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/dis.html>
+
+
+
 ```
 NAME
   dis - disassemble

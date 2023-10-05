@@ -1,4 +1,16 @@
-# union
+# union(union contents)
+
+## 概述
+
+crash工具中，union命令是一个用来合并两个或多个三维实体的命令，它可以将多个实体的公共部分和非公共部分合并成一个单一的实体，从而减少实体的数量和复杂度。
+
+union命令的作用类似于CAD中的union命令，但是crash工具中的union命令只适用于三维实体，不能合并二维线。
+
+## 举例子
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/union.html>
 
 ```
 NAME
@@ -120,30 +132,5 @@ NOTE
   Lastly, the short-cut "*" (pointer-to) command may also be used to negate
   the need to enter the "union" command name (enter "help *" for details).
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ---

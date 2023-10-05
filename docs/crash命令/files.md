@@ -1,4 +1,128 @@
-# files
+# files(open files)
+
+## 概述
+
+files命令是crash工具中的一个常用命令，它可以用来查看进程当前打开的文件的信息，包括文件的file结构体，dentry结构体，inode结构体，以及文件的路径和类型。files命令有以下几种用法：
+
+- files <pid> 或者 files <进程task_struct>：查看指定进程的打开文件信息，如果不加参数，则查看当前进程的打开文件信息。
+- files -d <dentry的地址>：根据dentry的地址查看它对应的inode、超级块、文件类型以及路径。
+- files -p <inode的地址>：根据inode的地址查看这个inode下面的所有页缓存。
+- files -c：查看进程打开的文件对应的fd、inode以及inode的i_mapping成员、pagecache中的页面数、文件类型和路径。
+- files -R <内容>：在所有进程的打开文件信息中搜索指定的内容，比如文件名，inode地址，地址空间、file地址等等。
+
+## 举例子
+
+- 获取给定进程打开的文件、工作路径
+
+```shell
+crash> files |more
+PID: 2429976  TASK: ff352c8c1e7fbc80  CPU: 53  COMMAND: "ovs-vswitchd"
+ROOT: /    CWD: /
+ FD       FILE            DENTRY           INODE       TYPE PATH
+  0 ff352c8cc902f900 ff352c010a818870 ff352c7e803fc910 CHR  /dev/null
+  1 ff352c8cc902f900 ff352c010a818870 ff352c7e803fc910 CHR  /dev/null
+  2 ff352c8cc902f900 ff352c010a818870 ff352c7e803fc910 CHR  /dev/null
+  3 ff352c8cc77d7a00 ff352c0c7d150d80 ff352cfe78f423f0 SOCK UNIX
+  4 ff352c8cc77d6a00 ff352c0c7d1506c0 ff352cfe78f47930 SOCK UNIX
+  5 ff352c8cc77d5800 ff352c0c7d150438 ff352cfe78f418f0 SOCK UNIX
+  6 ff352c8cc77d4100 ff352c0c7d151290 ff352cfe78f46330 SOCK UNIX
+  7 ff352cf8483b8300 ff352c8c449dbd88 ff352cf866eab1b0 SOCK UNIX
+```
+
+内核线程均没有打开文件，工作路径均为根
+
+```shell
+crash> files 2
+PID: 2      TASK: ff352c010ac51e40  CPU: 16  COMMAND: "kthreadd"
+ROOT: /    CWD: /
+No open files
+
+crash> files 3
+PID: 3      TASK: ff352c010ac50000  CPU: 0   COMMAND: "rcu_gp"
+ROOT: /    CWD: /
+No open files
+
+```
+
+- 查看进程1（init）打开的文件信息：
+
+```
+crash> files 1
+PID: 1      TASK: ffff8800a8c0c000  CPU: 0   COMMAND: "init"
+ROOT: /    CWD: /root
+ FD    FILE     DENTRY    INODE    TYPE  PATH
+  0 ffff8800a8c0c000 ffff8800a8c0c000 ffff8800a8c0c000 CHR   /dev/console
+  1 ffff8800a8c0c000 ffff8800a8c0c000 ffff8800a8c0c000 CHR   /dev/console
+  2 ffff8800a8c0c000 ffff8800a8c0c000 ffff8800a8c0c000 CHR   /dev/console
+```
+
+- 根据dentry地址查看文件信息：
+
+```
+crash> files -d ffff8800a8c0c000
+DENTRY: ffff8800a8c0c000
+INODE: ffff8800a8c0c000
+SUPERBLOCK: ffff88003fc1f800 devtmpfs
+TYPE: CHR
+PATH: /dev/console
+```
+
+- 根据inode地址查看页缓存信息：
+
+```
+crash> files -p ffff88003fc1f800
+INODE: ffff88003fc1f800
+ADDRESS_SPACE: ffff88003fc1f800
+PAGECACHE:
+RADIX_TREE_ROOT: ffff88003fc1f800 height: 1 count: 2
+ffff88003fc1f800: 55 entries, 55/64 used, offset: 0, exception: 1, gang lookup: 64/64
+ffff88003fc1f800[00]: (nil)
+ffff88003fc1f800[01]: (nil)
+...
+ffff88003fc1f800[54]: (nil)
+ffff88003fc1f800[55]: (nil)
+ffff88003fc1f800[56]: (nil)
+ffff88003fc1f800[57]: (nil)
+ffff88003fc1f800[58]: (nil)
+ffff88003fc1f800[59]: (nil)
+ffff88003fc1f800[60]: (nil)
+ffff88003fc1f800[61]: (nil)
+ffff88003fc1f800[62]: (nil)
+ffff88003fc1f800[63]: (nil)
+```
+
+- 查看进程打开文件对应的fd、inode等信息：
+
+```
+crash> files -c 1
+PID: 1      TASK: ffff8800a8c0c000  CPU: 0   COMMAND: "init"
+ROOT: /    CWD: /root
+ FD    FILE     DENTRY    INODE    I_MAPPING   PGCOUNT TYPE PATH
+  0 ffff880037e9b400 ffff880037e9b400 ffff880037e9b400 ffffffff81e3b4e8        2 CHR   /dev/console
+  1 ffff880037e9b400 ffff880037e9b400 ffff880037e9b400 ffffffff81e3b4e8        2 CHR   /dev/console
+  2 ffff880037e9b400 ffff880037e9b400 ffff880037e9b400 ffffffff81e3b4e8        2 CHR   /dev/console
+```
+
+- 在所有进程的打开文件信息中搜索/dev/null：
+
+```
+crash> files -R /dev/null
+PID: 1      TASK: ffff8800a8c0c000  CPU: 0   COMMAND: "init"
+ROOT: /    CWD: /root
+ FD    FILE     DENTRY    INODE    TYPE  PATH
+ 10 ffff880037e9b000 ffff880037e9b000 ffff880037e9b000 CHR   /dev/null
+
+PID: 2      TASK: ffff8800a8c0c800  CPU: 0   COMMAND: "kthreadd"
+ROOT: /    CWD: /
+ FD    FILE     DENTRY    INODE    TYPE  PATH
+ 10 ffff880037e9b000 ffff880037e9b000 ffff880037e9b000 CHR   /dev/null
+
+...
+```
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/files.html>
 
 ```
 NAME
@@ -141,21 +265,5 @@ EXAMPLES
     ca202680  30134000  f59b91ac        5  2 82c referenced,uptodate,lru,private
 
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ---

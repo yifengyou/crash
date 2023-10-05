@@ -1,4 +1,70 @@
-# ps
+# ps(display process status information)
+
+## 概述
+
+crash工具中，ps命令是用来显示进程状态信息的命令，它可以查看当前系统中有哪些进程正在运行，以及它们的运行状态、资源占用、父子关系等。
+
+## 举例子
+
+- 查看所有进程的基本信息，包括进程ID，父进程ID，最后运行的CPU，任务地址，状态，内存占用，虚拟地址大小和命令名：
+
+```
+crash> ps
+   PID    PPID  CPU   TASK    ST  %MEM     VSZ    RSS  COMM
+      0      0   0  ffff88011e8b8000 RU   0.0       0      0  [swapper/0]
+      1      0   1  ffff88011e8b8000 IN   0.1    1912    572  init
+      2      0   2  ffff88011e8b8000 IN   0.0       0      0  [kthreadd]
+      3      2   3  ffff88011e8b8000 IN   0.0       0      0  [ksoftirqd/0]
+      ...
+```
+
+- 查看进程的父子关系，以树状结构显示：
+
+```
+crash> ps -p 2429976
+PID: 0      TASK: ffffffff91e12780  CPU: 0   COMMAND: "swapper/0"
+ PID: 1      TASK: ff352c010ac55ac0  CPU: 37  COMMAND: "systemd"
+  PID: 2429976  TASK: ff352c8c1e7fbc80  CPU: 53  COMMAND: "ovs-vswitchd"
+
+```
+
+- 查看进程的运行时间，启动时间和用户/系统时间：
+
+```
+crash> ps -t
+
+PID: 2429975  TASK: ff352c06ac2d8000  CPU: 26  COMMAND: "nova-compute"
+    RUN TIME: 00:00:00
+  START TIME: 23827072375838281
+       UTIME: 49919144
+       STIME: 173759831
+
+PID: 2429976  TASK: ff352c8c1e7fbc80  CPU: 53  COMMAND: "ovs-vswitchd"
+    RUN TIME: 00:00:00
+  START TIME: 23827072580773493
+       UTIME: 0
+       STIME: 0
+
+```
+
+- 查看进程的最后运行时间戳，状态和排序：
+
+```
+crash> ps -l |more
+[23825957346394348] [IN]  PID: 1995550  TASK: ff352c8bb90f1e40  CPU: 121  COMMAND: "CPU 7/KVM"
+[23825957346321856] [IN]  PID: 1995488  TASK: ff352c8c10ac5ac0  CPU: 32  COMMAND: "CPU 4/KVM"
+[23825957346313126] [IN]  PID: 1995238  TASK: ff352cfe7962bc80  CPU: 20  COMMAND: "CPU 2/KVM"
+[23825957346312537] [IN]  PID: 1995240  TASK: ff352c808ad65ac0  CPU: 34  COMMAND: "CPU 4/KVM"
+[23825957346312393] [IN]  PID: 1995239  TASK: ff352c8d02661e40  CPU: 84  COMMAND: "CPU 3/KVM"
+[23825957346308912] [IN]  PID: 1995544  TASK: ff352cfe79689e40  CPU: 2   COMMAND: "CPU 2/KVM"
+[23825957346288933] [IN]  PID: 1995546  TASK: ff352cfe7968dac0  CPU: 52  COMMAND: "CPU 4/KVM"
+[23825957346272198] [IN]  PID: 1994755  TASK: ff352c8c14570000  CPU: 9   COMMAND: "CPU 0/KVM"
+[23825957346203094] [IN]  PID: 1994044  TASK: ff352c7e7af11e40  CPU: 108  COMMAND: "CPU 7/KVM"
+```
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/ps.html>
 
 ```
 NAME
@@ -403,30 +469,5 @@ EXAMPLES
           20      2   3  ffff8802129a9710  IN   0.0      0      0  [migration/3]
 
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ---

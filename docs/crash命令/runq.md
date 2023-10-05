@@ -1,4 +1,140 @@
-# runq
+# runq(run queue)
+
+## 概述
+
+runq命令是crash工具中的一个命令，它用于显示每个CPU上的运行队列（run queue）的信息。
+
+运行队列是内核用来管理可运行或正在运行的进程的数据结构，它包含了进程的优先级，调度策略，时间片等信息。
+
+runq命令可以帮助分析系统的负载情况，进程的调度状态，CPU的利用率等。
+
+runq命令有以下几种用法：
+
+- runq：显示每个CPU上的运行队列中的进程信息，包括进程ID，任务地址，进程名字等。
+- runq -t：显示每个CPU上的运行队列的时间戳信息，包括最后一次调度时间，最后一次上下文切换时间等。
+- runq -m：显示每个CPU上正在运行的进程已经运行了多长时间，格式是天-时-分-秒-毫秒。
+- runq -g：显示每个CPU上正在运行的进程的task_group信息，即cgroup中的cpu子系统分配的组。
+- runq -c <cpulist>：只显示指定CPU上的运行队列信息，cpulist是一个以逗号分隔的CPU编号列表，可以使用连字符表示范围。
+
+## 举例子
+
+- 查看每个CPU上的运行队列中的进程信息：
+
+```
+crash> runq |more
+CPU 0 RUNQUEUE: ff352c7e7f422940
+  CURRENT: PID: 0      TASK: ffffffff91e12780  COMMAND: "swapper/0"
+  RT PRIO_ARRAY: ff352c7e7f422b80
+     [no tasks queued]
+  CFS RB_ROOT: ff352c7e7f4229f0
+     [no tasks queued]
+
+CPU 1 RUNQUEUE: ff352c7e7f462940
+  CURRENT: PID: 0      TASK: ff352c010acb8000  COMMAND: "swapper/1"
+  RT PRIO_ARRAY: ff352c7e7f462b80
+     [no tasks queued]
+  CFS RB_ROOT: ff352c7e7f4629f0
+     [no tasks queued]
+
+CPU 2 RUNQUEUE: ff352c7e7f4a2940
+  CURRENT: PID: 0      TASK: ff352c010acbbc80  COMMAND: "swapper/2"
+  RT PRIO_ARRAY: ff352c7e7f4a2b80
+     [no tasks queued]
+  CFS RB_ROOT: ff352c7e7f4a29f0
+     [no tasks queued]
+```
+
+- 查看每个CPU上的运行队列的时间戳信息：
+
+```
+crash> runq -t |more
+ CPU 0: 23825957346395907
+        00000000000000000  PID: 0      TASK: ffffffff91e12780  COMMAND: "swapper/0"
+ CPU 1: 23825957346452705
+        00000000000000000  PID: 0      TASK: ff352c010acb8000  COMMAND: "swapper/1"
+ CPU 2: 23825957346399384
+        00000000000000000  PID: 0      TASK: ff352c010acbbc80  COMMAND: "swapper/2"
+ CPU 3: 23825957346399789
+        00000000000000000  PID: 0      TASK: ff352c010acbdac0  COMMAND: "swapper/3"
+ CPU 4: 23825957346400317
+        00000000000000000  PID: 0      TASK: ff352c010ace1e40  COMMAND: "swapper/4"
+ CPU 5: 23825957346401290
+        00000000000000000  PID: 0      TASK: ff352c010ace0000  COMMAND: "swapper/5"
+ CPU 6: 23825957346401575
+        00000000000000000  PID: 0      TASK: ff352c010ace3c80  COMMAND: "swapper/6"
+ CPU 7: 23825957346401929
+        00000000000000000  PID: 0      TASK: ff352c010ace5ac0  COMMAND: "swapper/7"
+
+```
+
+- 查看每个CPU上正在运行的进程已经运行了多长时间：
+
+```
+crash> runq -m |more
+   CPU 0: [275 18:19:17.346]  PID: 0      TASK: ffffffff91e12780  COMMAND: "swapper/0"
+   CPU 1: [275 18:19:17.346]  PID: 0      TASK: ff352c010acb8000  COMMAND: "swapper/1"
+   CPU 2: [275 18:19:17.346]  PID: 0      TASK: ff352c010acbbc80  COMMAND: "swapper/2"
+   CPU 3: [275 18:19:17.346]  PID: 0      TASK: ff352c010acbdac0  COMMAND: "swapper/3"
+   CPU 4: [275 18:19:17.346]  PID: 0      TASK: ff352c010ace1e40  COMMAND: "swapper/4"
+   CPU 5: [275 18:19:17.346]  PID: 0      TASK: ff352c010ace0000  COMMAND: "swapper/5"
+   CPU 6: [275 18:19:17.346]  PID: 0      TASK: ff352c010ace3c80  COMMAND: "swapper/6"
+   CPU 7: [275 18:19:17.346]  PID: 0      TASK: ff352c010ace5ac0  COMMAND: "swapper/7"
+   CPU 8: [275 18:19:17.346]  PID: 0      TASK: ff352c010acf8000  COMMAND: "swapper/8"
+   CPU 9: [275 18:19:17.346]  PID: 0      TASK: ff352c010acfbc80  COMMAND: "swapper/9"
+  CPU 10: [275 18:19:17.346]  PID: 0      TASK: ff352c010acfdac0  COMMAND: "swapper/10"
+  CPU 11: [275 18:19:17.346]  PID: 0      TASK: ff352c010acf9e40  COMMAND: "swapper/11"
+  CPU 12: [275 18:19:17.346]  PID: 0      TASK: ff352c010ad10000  COMMAND: "swapper/12"
+  CPU 13: [275 18:19:17.346]  PID: 0      TASK: ff352c010ad13c80  COMMAND: "swapper/13"
+```
+
+- 查看每个CPU上正在运行的进程的task_group信息：
+
+```
+crash> runq -g |more
+CPU 0
+  CURRENT: PID: 0      TASK: ffffffff91e12780  COMMAND: "swapper/0"
+  ROOT_TASK_GROUP: ffffffff9269d480  RT_RQ: ff352c7e7f422b80
+     [no tasks queued]
+  ROOT_TASK_GROUP: ffffffff9269d480  CFS_RQ: ff352c7e7f4229c0
+     [no tasks queued]
+
+CPU 1
+  CURRENT: PID: 0      TASK: ff352c010acb8000  COMMAND: "swapper/1"
+  ROOT_TASK_GROUP: ffffffff9269d480  RT_RQ: ff352c7e7f462b80
+     [no tasks queued]
+  ROOT_TASK_GROUP: ffffffff9269d480  CFS_RQ: ff352c7e7f4629c0
+     [no tasks queued]
+
+CPU 2
+  CURRENT: PID: 0      TASK: ff352c010acbbc80  COMMAND: "swapper/2"
+  ROOT_TASK_GROUP: ffffffff9269d480  RT_RQ: ff352c7e7f4a2b80
+     [no tasks queued]
+  ROOT_TASK_GROUP: ffffffff9269d480  CFS_RQ: ff352c7e7f4a29c0
+     [no tasks queued]
+```
+
+- 只查看CPU 2和3上的运行队列信息：
+
+```
+crash> runq -c 2,3 |more
+CPU 2 RUNQUEUE: ff352c7e7f4a2940
+  CURRENT: PID: 0      TASK: ff352c010acbbc80  COMMAND: "swapper/2"
+  RT PRIO_ARRAY: ff352c7e7f4a2b80
+     [no tasks queued]
+  CFS RB_ROOT: ff352c7e7f4a29f0
+     [no tasks queued]
+
+CPU 3 RUNQUEUE: ff352c7e7f4e2940
+  CURRENT: PID: 0      TASK: ff352c010acbdac0  COMMAND: "swapper/3"
+  RT PRIO_ARRAY: ff352c7e7f4e2b80
+     [no tasks queued]
+  CFS RB_ROOT: ff352c7e7f4e29f0
+     [no tasks queued]
+```
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/runq.html>
 
 ```
 NAME
@@ -130,6 +266,5 @@ EXAMPLES
                    [120] PID: 3248   TASK: ffff88012a9d4100  COMMAND: "qemu-kvm"
 
 ```
-
 
 ---

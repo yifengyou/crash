@@ -1,4 +1,35 @@
-# extend
+# extend(extend the crash command set)
+
+## 概述
+
+扩展crash命令
+
+```shell
+extend [shared-object ...] | [-u [shared-object ...]] | -s
+```
+
+
+
+## 举例子
+
+- 加载共享库
+
+
+
+
+- 卸载共享库
+
+
+
+- 罗列已经加载共享库
+
+
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/extend.html>
+
+
 
 ```
 NAME

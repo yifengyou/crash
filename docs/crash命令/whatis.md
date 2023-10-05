@@ -1,4 +1,107 @@
-# whatis
+# whatis(search symbol table for data or type information)
+
+## 概述
+
+crash工具中，whatis命令是一个用于查询内核符号或数据类型的详细定义的命令，它可以显示指定符号或类型的名称、大小、地址、源文件和结构体成员等信息。
+
+whatis命令有以下几种常用功能：
+
+- whatis <symbol>：查询指定的内核符号的定义，symbol可以是变量名、函数名、宏名等。
+- whatis <type>：查询指定的数据类型的定义，type可以是结构体名、联合体名、枚举名等。
+- whatis -o <type>：查询指定的数据类型内部成员的偏移量，type必须是结构体名或联合体名。
+- whatis -r <size>：查询系统中所有大小为size的数据类型，size可以是一个数值，也可以是一个区间。
+- whatis -m <type>：查询系统中所有包含指定类型的数据类型，type可以是任意数据类型。
+
+## 举例子
+
+- 查询内核变量jiffies的定义：
+
+```shell
+crash> whatis  jiffies
+volatile unsigned long jiffies;
+crash>
+```
+
+- 查询内核函数panic的定义：
+
+```shell
+crash> dis -l panic |more
+/usr/src/debug/kernel-4.19.90-2102.2.0.0062.el7.x86_64/linux-4.19.90-2102.2.0.0062.el7.x86_
+64/kernel/panic.c: 162
+0xffffffff90cb524e <panic>:     nopl   0x0(%rax,%rax,1) [FTRACE NOP]
+0xffffffff90cb5253 <panic+5>:   push   %rbp
+0xffffffff90cb5254 <panic+6>:   mov    %rsp,%rbp
+
+```
+
+- 查询内核结构体task_struct的定义：
+
+```shell
+crash> whatis task_struct |more
+struct task_struct {
+    struct thread_info thread_info;
+    volatile long state;
+    void *stack;
+    atomic_t usage;
+    unsigned int flags;
+    unsigned int ptrace;
+    struct llist_node wake_entry;
+    int on_cpu;
+```
+
+- 查询内核结构体task_struct内部成员的偏移量：
+```shell
+crash> whatis -o task_struct |more
+struct task_struct {
+     [0] struct thread_info thread_info;
+    [16] volatile long state;
+    [24] void *stack;
+    [32] atomic_t usage;
+    [36] unsigned int flags;
+    [40] unsigned int ptrace;
+    [48] struct llist_node wake_entry;
+    [56] int on_cpu;
+
+```
+
+- 查询系统中所有大小为32字节的数据类型：
+
+```shell
+crash> whatis xhci_erst
+struct xhci_erst {
+    struct xhci_erst_entry *entries;
+    unsigned int num_entries;
+    dma_addr_t erst_dma_addr;
+    unsigned int erst_size;
+}
+SIZE: 32
+crash> whatis -r 32 | more
+SIZE  TYPE
+  32  __call_single_data
+  32  __old_kernel_stat
+  32  _cpuid4_info_regs
+
+```
+
+- 查询系统中所有包含struct list_head类型的数据类型：
+
+```shell
+crash> whatis -m list_head |more
+  SIZE  TYPE
+     8  pcpu_freelist
+     8  urb_priv
+    16  bpf_offload_dev
+    16  bucket
+    16  dcookie_user
+    16  double_list
+    16  file_lock_list_struct
+    16  flush_busy_ctx_data
+
+```
+
+## 帮助信息
+
+* <https://crash-utility.github.io/help_pages/whatis.html>
 
 ```
 NAME
@@ -179,7 +282,5 @@ EXAMPLES
      496  psmouse
 
 ```
-
-
 
 ---
